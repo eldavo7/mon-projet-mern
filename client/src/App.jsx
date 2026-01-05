@@ -3,32 +3,36 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 
 import Login from './pages/Login';
+import DashboardProf, { VueAccueilProf, VuePlanning } from './pages/DashboardProf';
 import DashboardEtudiant from './pages/DashboardEtudiant';
-import DashboardProf from './pages/DashboardProf';
+import GestionEleves from './pages/GestionEleves';
+import ProfilEtudiant from './pages/ProfilEtudiant';
 import Conditions from './components/Conditions';
 
-function PrivateRoute({ children, userRole, requiredRoles }) {
-  const navigate = useNavigate();
+// --- LE GARDE DE SÉCURITÉ (PrivateRoute) ---
+function PrivateRoute({ children, requiredRoles }) {
   const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('role'); // On lit le rôle en direct pour éviter les lags d'état
 
-  useEffect(() => {
-    if (!token) {
-      navigate('/', { replace: true });
-    } else if (requiredRoles && !requiredRoles.includes(userRole)) {
-      // Redirection intelligente si le rôle n'est pas autorisé
-      const target = (userRole === 'admin' || userRole === 'prof') 
-        ? '/DashboardProf' 
-        : '/DashboardEtudiant';
-      navigate(target, { replace: true });
-    }
-  }, [token, userRole, requiredRoles, navigate]);
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
 
-  return (token && (!requiredRoles || requiredRoles.includes(userRole))) ? children : null;
+  if (requiredRoles && !requiredRoles.includes(userRole)) {
+    // Redirection si le rôle ne correspond pas
+    const target = (userRole === 'prof' || userRole === 'admin') 
+      ? '/DashboardProf' 
+      : '/DashboardEtudiant';
+    return <Navigate to={target} replace />;
+  }
+
+  return children;
 }
 
 export default function App() {
   const [role, setRole] = useState(localStorage.getItem('role') || null);
 
+  // Cette fonction sera appelée par le composant Login après succès
   const handleLoginSuccess = (userRole) => {
     setRole(userRole);
   };
@@ -38,27 +42,35 @@ export default function App() {
       <Route path="/" element={<Login onLogin={handleLoginSuccess} />} />
       <Route path="/conditions" element={<Conditions />} />
 
-      {/* Route Étudiant : Uniquement pour le rôle 'etudiant' */}
+      {/* --- STRUCTURE PROFESSEUR (Utilise Outlet) --- */}
+      <Route 
+        path="/DashboardProf" 
+        element={
+          <PrivateRoute requiredRoles={['prof', 'admin', 'professeur']}>
+            <DashboardProf />
+          </PrivateRoute>
+        }
+      >
+        {/* Ces composants s'afficheront dans l'Outlet de DashboardProf */}
+        <Route index element={<VueAccueilProf />} />
+        <Route path="planning" element={<VuePlanning />} />
+        <Route path="gestion-eleve" element={<GestionEleves />} />
+      </Route>
+
+      {/* --- STRUCTURE ÉTUDIANT --- */}
       <Route 
         path="/DashboardEtudiant" 
         element={
-          <PrivateRoute userRole={role} requiredRoles={['etudiant']}>
+          <PrivateRoute requiredRoles={['etudiant']}>
             <DashboardEtudiant />
           </PrivateRoute>
         } 
       />
 
-      {/* Route Prof : Autorisée pour 'prof' ET 'admin' */}
-      <Route 
-        path="/DashboardProf" 
-        element={
-          <PrivateRoute userRole={role} requiredRoles={['prof', 'professeur', 'admin', 'surveillant', 'direction']}>
-            <DashboardProf />
-          </PrivateRoute>
-        } 
-      />
+      <Route path="/etudiant/:id" element={<ProfilEtudiant />} />
 
-      <Route path="*" element={<Navigate to="/" />} />
+      {/* Redirection automatique si route inconnue */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }

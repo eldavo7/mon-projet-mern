@@ -62,6 +62,10 @@ mon-projet-mern/
   - `../data/prof.py`
   - `../data/profs_final.json`
 
+- Script Python pour générer une base de données de ~140 profs :
+  - `../data/profs.py`...
+
+
 
 ---
 
@@ -90,5 +94,38 @@ mon-projet-mern/
 ## deux urls possible pour l'instant :
 - **DashboardEtudiant.jsx`**
 - **DashboardProf.jsx`**
+
+
+-- jai push sur github --
+
+- Je m'occupe de DashboardProf et la searchBar -> qui me permet 
+de chercher n'importe quel eleve 
+
+- Ajous de la page info de l'eleve :
+
+- /server/routes/studentRoutes.js                   ** Back **
+- mise a jours /client/pages/DashboardProf.jsx      ** Client **
+- creation de la fiche info etudiant                ** Client **
+// client/src/pages/ProfilEtudiant.jsx
+
+
+
+
+systeme de filtre et creation route http://localhost:5173/gestion-eleves
+- Mise a jour du backend :
+- /server/server.js
+- creation :
+- /server/routes/studentRoutes.js
+
+- Mise a jour du frontend:
+- creation :
+- /components/SearchBar.jsx
+-    ici cest la logique de la bare de recherche etudiant
+- /pages/GestionEleve.jsx
+- ici j'ai la bar de recherche et une table connecte a la database
+
+- FRONTEND
+- Jai change les url donc mise a jour de App.jsx et Dashboard.jsx
+- Creation de PlanningSemaine 
 
 
