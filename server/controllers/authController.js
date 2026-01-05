@@ -1,62 +1,127 @@
 // server/controllers/authController.js
 
-const User = require('../models/User');
+const User = require('../models/User'); 
+const Prof = require('../models/Prof'); 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 exports.register = async (req, res) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { id_unique, prenom, nom, email, password, role, age, genre, classe, matiere, classes } = req.body;
 
-        // 1. Vérifier si l'utilisateur existe déjà
-        let user = await User.findOne({ email });
-        if (user) return res.status(400).json({ message: "Cet utilisateur existe déjà" });
+        // 1. Vérifier si l'utilisateur existe déjà (Check sur les deux collections)
+        const existingUser = await User.findOne({ email }) || await Prof.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ success: false, message: "Cet utilisateur existe déjà" });
+        }
 
-        // 2. Crypter le mot de passe
+        // 2. Hashage du mot de passe
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
-        // 3. Créer l'utilisateur
-        user = new User({
-            name,
-            email,
-            password: hashedPassword,
-            role // 'etudiant' ou 'professeur'
-        });
+        let newUser;
+        
+        // 3. Logique de tri selon le rôle (correspondance avec tes scripts Python)
+        if (role === 'prof' || role === 'admin') {
+            newUser = new Prof({
+                id_unique,
+                prenom,
+                nom,
+                email,
+                password: hashedPassword,
+                role: role,
+                matiere,
+                classes: classes || [] // Utilise 'classes' (pluriel) du script Python
+            });
+        } else {
+            newUser = new User({
+                id_unique,
+                prenom,
+                nom,
+                email,
+                password: hashedPassword,
+                role: 'etudiant',
+                age,
+                genre,
+                classe // 'classe' (singulier) pour l'étudiant
+            });
+        }
 
-        await user.save();
-        res.status(201).json({ message: "Utilisateur créé avec succès !" });
+        await newUser.save();
+        res.status(201).json({ success: true, message: "Utilisateur créé avec succès !" });
 
     } catch (error) {
-        res.status(500).json({ message: "Erreur serveur", error: error.message });
+        console.error("Erreur Register:", error);
+        res.status(500).json({ success: false, message: "Erreur serveur", error: error.message });
     }
 };
 
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
+        
+        // Debug pour voir ce qui arrive au serveur
+        console.log("Tentative de login pour :", email);
 
-        // 1. Vérifier si l'utilisateur existe
-        const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ message: "Identifiants invalides" });
+        // 1. Recherche croisée (Etudiants d'abord, puis Profs)
+        let user = await User.findOne({ email });
+        let userType = 'student';
 
-        // 2. Vérifier le mot de passe
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: "Identifiants invalides" });
+        if (!user) {
+            user = await Prof.findOne({ email });
+            userType = 'prof';
+        }
 
-        // 3. Créer le Token JWT
+        // Si l'utilisateur n'existe dans aucune des deux collections
+        if (!user) {
+            console.log("Utilisateur non trouvé dans les collections etudiants/profs");
+            return res.status(400).json({ success: false, message: "Identifiants invalides" });
+        }
+
+        // 2. Vérification Bcrypt (Compare le texte clair avec le hash de la DB)
+        const isMatch = (password === user.password) || await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            console.log("Mot de passe incorrect pour :", email);
+            return res.status(400).json({ success: false, message: "Identifiants invalides" });
+        }
+
+        // 3. Création du Token JWT
         const token = jwt.sign(
             { id: user._id, role: user.role },
-            process.env.JWT_SECRET,
-            { expiresIn: '1d' } // Le token expire après 24h
+            process.env.JWT_SECRET || 'votre_cle_secrete_temporaire',
+            { expiresIn: '24h' }
         );
 
+        // 4. Construction de la réponse (Nettoyage pour ne pas renvoyer le password)
+        const userData = {
+            id: user._id,
+            id_unique: user.id_unique,
+            prenom: user.prenom,
+            nom: user.nom,
+            role: user.role,
+            email: user.email
+        };
+
+        // Ajout des infos spécifiques selon le type
+        if (userType === 'student') {
+            userData.classe = user.classe;
+            userData.age = user.age;
+            userData.genre = user.genre;
+        } else {
+            userData.matiere = user.matiere;
+            userData.classes = user.classes; // On renvoie bien le tableau des classes du prof
+        }
+
+        console.log(`Login réussi : ${userData.prenom} ${userData.nom} (${user.role})`);
+        
         res.json({
+            success: true,
             token,
-            user: { id: user._id, name: user.name, role: user.role }
+            user: userData
         });
 
     } catch (error) {
-        res.status(500).json({ message: "Erreur serveur" });
+        console.error("Erreur Login Controller:", error);
+        res.status(500).json({ success: false, message: "Erreur serveur" });
     }
 };

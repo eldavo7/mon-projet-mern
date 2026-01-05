@@ -1,106 +1,124 @@
 // client/src/pages/DashboardProf.jsx
 
-import React, { useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Navbar from '../components/Navbar';
+import { 
+    Search, Users, BookOpen, Calendar, 
+    Settings, LogOut, Menu, X, GraduationCap,
+    CheckCircle, AlertCircle, Filter
+} from 'lucide-react';
 
 const DashboardProf = () => {
     const navigate = useNavigate();
-    const token = localStorage.getItem('token');
-    
-    // Simulation de données Professeur
-    const prof = {
-        prenom: "Jean-Pierre",
-        nom: "Martin",
-        matiere: "Mathématiques",
-        classes: ["Terminale A", "1ère Générale", "2nde 4"],
-        avatar: "https://ui-avatars.com/api/?name=Jean+Pierre+Martin&background=4F46E5&color=fff"
-    };
+    const [prof, setProf] = useState(null);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
-        if (!token) {
+        const storedUser = localStorage.getItem('user');
+        if (storedUser) {
+            setProf(JSON.parse(storedUser));
+        } else {
             navigate('/');
         }
-    }, [token, navigate]);
+    }, [navigate]);
+
+    const handleLogout = () => {
+        localStorage.clear();
+        navigate('/');
+    };
+
+    if (!prof) return null;
 
     return (
-        <div className="min-h-screen bg-slate-50">
-            <Navbar />
+        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex overflow-x-hidden">
             
-            <main className="p-4 md:p-8 max-w-7xl mx-auto">
-                {/* --- BANDEAU PROFESSEUR --- */}
-                <div className="bg-indigo-700 rounded-2xl shadow-lg p-8 mb-8 text-white flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
-                    {/* Décoration en arrière-plan */}
-                    <div className="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full"></div>
-                    
-                    <img 
-                        src={prof.avatar} 
-                        alt="Avatar Prof" 
-                        className="w-28 h-28 rounded-2xl border-4 border-indigo-400/30 shadow-xl z-10"
-                    />
-                    
-                    <div className="text-center md:text-left z-10">
-                        <h2 className="text-3xl font-black italic tracking-tight">
-                            ESPACE ENSEIGNANT
+            {/* --- BURGER BUTTON --- */}
+            <button onClick={() => setIsSidebarOpen(true)} className="fixed top-4 left-4 z-40 p-3 bg-white shadow-md border border-slate-100 rounded-2xl text-violet-600">
+                <Menu size={24} />
+            </button>
+
+            {/* --- SIDEBAR --- */}
+            <aside className={`fixed top-0 left-0 z-50 h-full w-[300px] bg-white shadow-2xl transition-transform duration-300 ease-in-out flex flex-col ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                <div className="p-6 border-b flex items-center justify-between">
+                    <div className="flex items-center gap-3 italic font-black text-violet-600 uppercase">
+                        <GraduationCap size={24} /> Honoré d'Urfé
+                    </div>
+                    <button onClick={() => setIsSidebarOpen(false)}><X size={24} className="text-slate-400"/></button>
+                </div>
+                <nav className="flex-1 p-4 space-y-2 mt-4">
+                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl bg-violet-50 text-violet-600 font-bold">
+                        <Users size={20}/> Gestion Élèves
+                    </button>
+                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-50 font-semibold">
+                        <Calendar size={20}/> Emploi du temps
+                    </button>
+                    <button className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-slate-500 hover:bg-slate-50 font-semibold">
+                        <BookOpen size={20}/> Cahier de textes
+                    </button>
+                </nav>
+                <div className="p-6"><button onClick={handleLogout} className="w-full flex items-center gap-4 px-4 py-4 rounded-2xl text-red-500 bg-red-50 font-bold"><LogOut size={20}/> Déconnexion</button></div>
+            </aside>
+
+            {/* --- MAIN CONTENT --- */}
+            <main className="flex-1 p-6 md:p-12 lg:p-20 max-w-7xl mx-auto w-full">
+                <header className="mb-12">
+                    <p className="text-violet-600 font-black text-sm tracking-widest uppercase mb-2">Espace Enseignant</p>
+                    <h1 className="text-4xl font-black text-slate-900 uppercase italic">
+                        Bonjour, <span className="text-violet-600">Prof. {prof.nom}</span>
+                    </h1>
+                    <p className="text-slate-400 font-medium mt-2">Matière : {prof.matiere || 'Non renseignée'}</p>
+                </header>
+
+                {/* Barre de Recherche (Pour tes 1800 étudiants) */}
+                <section className="bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100 mb-8">
+                    <div className="flex flex-col md:flex-row gap-4 items-center">
+                        <div className="relative flex-1 w-full">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
+                            <input 
+                                type="text" 
+                                placeholder="Rechercher un élève (Nom, Prénom ou ID)..."
+                                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-4 focus:ring-violet-50 outline-none transition-all font-medium"
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                        <button className="flex items-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-slate-800 transition-all">
+                            <Filter size={20}/> Filtres
+                        </button>
+                    </div>
+                </section>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Liste Rapide / Appel */}
+                    <div className="lg:col-span-2 bg-white rounded-[2.5rem] p-8 shadow-sm border border-slate-100">
+                        <h2 className="text-xl font-black mb-6 flex items-center gap-3 italic">
+                            <CheckCircle className="text-green-500" size={24} /> Faire l'appel (Cours actuel)
                         </h2>
-                        <p className="text-xl mt-1 text-indigo-100 font-light">
-                            Ravi de vous revoir, <span className="font-bold">M. {prof.nom}</span>
-                        </p>
-                        <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-4">
-                            {prof.classes.map((classe, index) => (
-                                <span key={index} className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-lg text-xs font-bold border border-white/10">
-                                    {classe}
-                                </span>
+                        <div className="space-y-3 text-sm font-bold uppercase italic">
+                            {["Besson Michel", "Defer Biorne", "Zola Emile"].map((eleve, i) => (
+                                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                    <span>{eleve}</span>
+                                    <div className="flex gap-2">
+                                        <button className="px-3 py-1 bg-green-100 text-green-600 rounded-lg text-[10px]">PRÉSENT</button>
+                                        <button className="px-3 py-1 bg-red-100 text-red-600 rounded-lg text-[10px]">ABSENT</button>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
-                </div>
 
-                {/* --- ACTIONS RAPIDES --- */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                    <button className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-indigo-500 hover:shadow-md transition group">
-                        <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">📝</span>
-                        <span className="text-sm font-bold text-gray-700">Faire l'appel</span>
-                    </button>
-                    <button className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-indigo-500 hover:shadow-md transition group">
-                        <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">📊</span>
-                        <span className="text-sm font-bold text-gray-700">Saisir Notes</span>
-                    </button>
-                    <button className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-indigo-500 hover:shadow-md transition group">
-                        <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">📚</span>
-                        <span className="text-sm font-bold text-gray-700">Déposer un cours</span>
-                    </button>
-                    <button className="flex flex-col items-center justify-center p-6 bg-white rounded-xl shadow-sm border border-gray-100 hover:border-indigo-500 hover:shadow-md transition group">
-                        <span className="text-3xl mb-2 group-hover:scale-110 transition-transform">📣</span>
-                        <span className="text-sm font-bold text-gray-700">Annonce</span>
-                    </button>
-                </div>
-
-                {/* --- STATISTIQUES --- */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="w-2 h-6 bg-indigo-500 rounded-full"></span>
-                            Prochains Cours
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="flex justify-between items-center p-3 bg-slate-50 rounded-lg">
-                                <div>
-                                    <p className="font-bold text-gray-700 text-sm">Terminale A - Mathématiques</p>
-                                    <p className="text-xs text-gray-500">Salle 204 • 14:00 - 15:30</p>
-                                </div>
-                                <span className="bg-indigo-100 text-indigo-700 text-[10px] px-2 py-1 rounded font-black uppercase">Dans 1h</span>
-                            </div>
+                    {/* Stats / Alertes */}
+                    <div className="bg-violet-600 rounded-[2.5rem] p-8 text-white shadow-xl shadow-violet-200">
+                        <h2 className="text-xl font-black mb-6 flex items-center gap-3 italic text-white">
+                            <AlertCircle size={24} /> ALERTES
+                        </h2>
+                        <div className="bg-white/10 p-4 rounded-2xl mb-4">
+                            <p className="text-xs font-black opacity-70">ABSENCES NON JUSTIFIÉES</p>
+                            <p className="text-2xl font-black">12 Élèves</p>
                         </div>
-                    </div>
-
-                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                        <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                            <span className="w-2 h-6 bg-orange-400 rounded-full"></span>
-                            Alertes Absences
-                        </h3>
-                        <div className="flex items-center justify-center h-24 border-2 border-dashed border-gray-100 rounded-xl">
-                            <p className="text-gray-400 text-sm italic">Aucune alerte critique aujourd'hui</p>
+                        <div className="bg-white/10 p-4 rounded-2xl">
+                            <p className="text-xs font-black opacity-70">CONSEIL DE CLASSE</p>
+                            <p className="text-lg font-bold">Prévu le 15/01</p>
                         </div>
                     </div>
                 </div>

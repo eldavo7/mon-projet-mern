@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../api'; 
-// Import des icônes Lucide
 import { Eye, EyeOff, Lock, Mail, GraduationCap } from 'lucide-react';
 
 const Login = ({ onLogin }) => {
@@ -13,7 +12,6 @@ const Login = ({ onLogin }) => {
     const [error, setError] = useState('');
     const navigate = useNavigate();
 
-    // Redirection automatique si déjà connecté
     useEffect(() => {
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
@@ -23,30 +21,52 @@ const Login = ({ onLogin }) => {
         }
     }, [navigate]);
 
-    // LA FONCTION QUI MANQUAIT :
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
         setError('');
 
-        const result = await login(email, password);
+        try {
+            const result = await login(email, password);
+            console.log("Structure reçue :", result);
 
-        if (result.success) {
-            const userRole = result.data.user.role;
-            const token = result.data.token;
+            // On vérifie si la connexion est réussie
+            if (result && result.success) {
+                
+                // GESTION DU DOUBLE EMBALLAGE (vu sur ta photo console)
+                // Si result.data contient lui-même un objet data, on descend d'un cran
+                const cleanData = result.data?.data ? result.data.data : (result.data || result);
+                
+                const userData = cleanData.user;
+                const token = cleanData.token;
 
-            localStorage.setItem('token', token);
-            localStorage.setItem('role', userRole);
+                if (userData && token) {
+                    const userRole = userData.role;
 
-            onLogin(userRole);
+                    // On stocke tout dans le localStorage
+                    localStorage.setItem('token', token);
+                    localStorage.setItem('role', userRole);
+                    localStorage.setItem('user', JSON.stringify(userData));
 
-            if (userRole === 'admin') {
-                navigate('/DashboardProf');
+                    onLogin(userRole);
+
+                    // Redirection intelligente
+                    if (userRole === 'admin' || userRole === 'professeur') {
+                        navigate('/DashboardProf');
+                    } else {
+                        navigate('/DashboardEtudiant');
+                    }
+                } else {
+                    setError("Données utilisateur introuvables dans la réponse.");
+                    setIsLoading(false);
+                }
             } else {
-                navigate('/DashboardEtudiant');
+                setError(result?.message || "Identifiants invalides");
+                setIsLoading(false);
             }
-        } else {
-            setError(result.message);
+        } catch (err) {
+            console.error("Erreur Login:", err);
+            setError("Serveur injoignable.");
             setIsLoading(false);
         }
     };
@@ -59,7 +79,7 @@ const Login = ({ onLogin }) => {
                         <div className="bg-indigo-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-indigo-200">
                             <GraduationCap size={32} color="white" />
                         </div>
-                        <h2 className="text-3xl font-black tracking-tight">Content de vous revoir</h2>
+                        <h2 className="text-3xl font-black tracking-tight">Lycée Honoré d'Urfé</h2>
                         <p className="text-slate-400 mt-2 font-medium">Connectez-vous à votre espace</p>
                     </div>
 
@@ -71,22 +91,20 @@ const Login = ({ onLogin }) => {
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Email */}
                         <div className="relative">
-                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1 mb-2 block tracking-widest">Email Professionnel</label>
+                            <label className="text-[10px] font-black text-slate-400 uppercase ml-1 mb-2 block tracking-widest">Email</label>
                             <div className="relative">
                                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300" size={20} />
                                 <input 
                                     type="email" 
                                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:bg-white focus:ring-4 focus:ring-indigo-50 focus:border-indigo-500 outline-none transition-all font-medium"
-                                    placeholder="nom@ecole.com"
+                                    placeholder="nom@lycee.hu.fr"
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
                                 />
                             </div>
                         </div>
                         
-                        {/* Mot de passe */}
                         <div className="relative">
                             <label className="text-[10px] font-black text-slate-400 uppercase ml-1 mb-2 block tracking-widest">Mot de passe</label>
                             <div className="relative">

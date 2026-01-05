@@ -1,76 +1,63 @@
 // client/src/App.jsx
-
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate, Navigate } from 'react-router-dom';
 
-// Importations des pages
 import Login from './pages/Login';
 import DashboardEtudiant from './pages/DashboardEtudiant';
 import DashboardProf from './pages/DashboardProf';
 import Conditions from './components/Conditions';
 
-// 1. Composant de protection des routes
-function PrivateRoute({ children, userRole, requiredRole }) {
+function PrivateRoute({ children, userRole, requiredRoles }) {
   const navigate = useNavigate();
-  const token = localStorage.getItem('token'); // On vérifie aussi le token
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     if (!token) {
       navigate('/', { replace: true });
-    } else if (requiredRole && userRole !== requiredRole) {
-      // Si le rôle ne correspond pas, on redirige vers le bon dashboard
-      const target = userRole === 'admin' ? '/DashboardProf' : '/DashboardEtudiant';
+    } else if (requiredRoles && !requiredRoles.includes(userRole)) {
+      // Redirection intelligente si le rôle n'est pas autorisé
+      const target = (userRole === 'admin' || userRole === 'prof') 
+        ? '/DashboardProf' 
+        : '/DashboardEtudiant';
       navigate(target, { replace: true });
     }
-  }, [token, userRole, requiredRole, navigate]);
+  }, [token, userRole, requiredRoles, navigate]);
 
-  return (token && (!requiredRole || userRole === requiredRole)) ? children : null;
+  return (token && (!requiredRoles || requiredRoles.includes(userRole))) ? children : null;
 }
 
 export default function App() {
-  // On initialise le rôle depuis le localStorage pour ne pas le perdre au rafraîchissement
   const [role, setRole] = useState(localStorage.getItem('role') || null);
 
-  // Synchronisation du rôle avec le localStorage
-  useEffect(() => {
-    if (role) {
-      localStorage.setItem('role', role);
-    } else {
-      localStorage.removeItem('role');
-    }
-  }, [role]);
-
-  // Cette fonction sera appelée par le composant Login après une API réussie
   const handleLoginSuccess = (userRole) => {
     setRole(userRole);
   };
 
   return (
     <Routes>
-      {/* Route publique */}
       <Route path="/" element={<Login onLogin={handleLoginSuccess} />} />
       <Route path="/conditions" element={<Conditions />} />
 
-      {/* Routes protégées */}
+      {/* Route Étudiant : Uniquement pour le rôle 'etudiant' */}
       <Route 
         path="/DashboardEtudiant" 
         element={
-          <PrivateRoute userRole={role} requiredRole="etudiant">
+          <PrivateRoute userRole={role} requiredRoles={['etudiant']}>
             <DashboardEtudiant />
           </PrivateRoute>
         } 
       />
 
+      {/* Route Prof : Autorisée pour 'prof' ET 'admin' */}
       <Route 
         path="/DashboardProf" 
         element={
-          <PrivateRoute userRole={role} requiredRole="admin"> {/* "admin" car c'est ton rôle backend pour les profs */}
+          <PrivateRoute userRole={role} requiredRoles={['prof', 'professeur', 'admin', 'surveillant', 'direction']}>
             <DashboardProf />
           </PrivateRoute>
         } 
       />
 
-      {/* Redirection automatique pour les pages inconnues */}
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>
   );
