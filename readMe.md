@@ -127,5 +127,41 @@ systeme de filtre et creation route http://localhost:5173/gestion-eleves
 - FRONTEND
 - Jai change les url donc mise a jour de App.jsx et Dashboard.jsx
 - Creation de PlanningSemaine 
+- routes Outlet
 
+
+
+
+
+- J'ai cree un planning prof et eleve grace a un script python
+
+
+
+- Mainteneant que le planning prof est ok 
+- je passe a la data base des eleves du prof connecte, 
+ici j'ai un probleme pour recuperer les 80 eleves environ 
+ce probleme vient surement du fait des nom des classes : 1er ES 3 , ou 1ERE ES3 ... (les espaces .. differt)
+
+### ➕ Ajouts
+- `client/src/components/GirdPlanning.jsx`
+- `client/src/pages/PlanningProf.jsx`
+
+### 🔁 Modifications
+- `client/src/pages/DashboardProf.jsx`
+
+
+
+
+
+A FAIRE   
+Il faut mettre l'api de plannigProf.jsx ou dashboardProf.jsx dans le fichier /client/api.js
+
+
+Probleme a resoudre :
+- il faut savoir sur quel route ou Outlet est le site de base (normalement c Login.jsx pour se connecter)
+quand je lance mon server mongosCompass et que japplique les cmd : 
+- node server.js 
+-npm run dev 
+
+mon site s'ouvre bien mais me lance sur un dashboard prof normalement cest Login.jsx
 
