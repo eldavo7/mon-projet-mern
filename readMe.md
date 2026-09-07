@@ -165,3 +165,19 @@ quand je lance mon server mongosCompass et que japplique les cmd :
 
 mon site s'ouvre bien mais me lance sur un dashboard prof normalement cest Login.jsx
 
+
+
+
+
+
+## Mise à jour du composant Navbar & de la Messagerie ENT
+
+* **Optimisation du composant Navbar (`Navbar.jsx`)** : 
+  * Ajout de la gestion dynamique des rôles (Enseignant / Étudiant) avec menus déroulants et routes adaptées.
+  * Fermeture automatique du menu lors d'un clic en dehors du composant via un hook React (`useEffect` & `useRef`).
+  * Sécurisation de la déconnexion et nettoyage propre de `localStorage`.
+
+* **Refonte de la vue Messagerie (`Messagerie.jsx`)** :
+  * Intégration de balises `<optgroup>` dans la sélection des destinataires pour catégoriser clairement les enseignants et les élèves.
+  * Normalisation et nettoyage du format d'affichage des noms de contacts et de l'historique des messages.
+  * Résolution des problèmes de duplication du composant Navbar sur la route `/DashboardProf/messagerie`.

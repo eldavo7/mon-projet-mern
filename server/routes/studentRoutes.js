@@ -1,38 +1,37 @@
+// server/routes/studentRoutes.js
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User'); // On pointe vers User.js
+const User = require('../models/User'); // Utilisation du modèle User
 
-// server/routes/studentRoutes.js
-
+// 1. RECHERCHE PAR MOT-CLÉ (nom/prénom)
+// Doit obligatoirement être placée AVANT la route avec l'ID /:id
 router.get('/search', async (req, res) => {
     try {
-        const query = req.query.q;
-        // Si tu n'as pas de champ "role", enlève { role: 'student' }
+        const query = req.query.q || '';
+        
         const students = await User.find({
             $or: [
                 { nom: { $regex: query, $options: 'i' } },
                 { prenom: { $regex: query, $options: 'i' } }
             ]
         }).limit(10);
+        
         res.json(students);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// server/routes/studentRoutes.js
-
+// 2. RÉCUPÉRATION DE TOUS LES ÉLÈVES (ou filtrés par classe)
 router.get('/', async (req, res) => {
     try {
         const { classe } = req.query;
         let filtre = {};
 
-        // Si on demande une classe, on cherche de manière souple (ignore majuscules/minuscules)
         if (classe) {
             filtre.classe = { $regex: classe, $options: 'i' };
         }
 
-        // On récupère les utilisateurs
         const students = await User.find(filtre).sort({ nom: 1 });
         res.json(students);
     } catch (err) {
@@ -40,10 +39,9 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ROUTE POUR RÉCUPÉRER UN ÉLÈVE PAR SON ID
+// 3. RÉCUPÉRATION D'UN ÉLÈVE SPÉCIFIQUE PAR SON ID MONGODB
 router.get('/:id', async (req, res) => {
     try {
-        // IMPORTANT: Utiliser User car Student n'existe pas dans tes modèles
         const student = await User.findById(req.params.id);
         
         if (!student) {
@@ -52,12 +50,9 @@ router.get('/:id', async (req, res) => {
         
         res.json(student);
     } catch (err) {
-        console.error("Erreur récup élève:", err);
-        // Si l'ID est mal formé, MongoDB renvoie une erreur cast
-        res.status(500).json({ message: "Erreur lors de la récupération des données" });
+        console.error("Erreur récupération élève:", err);
+        res.status(500).json({ message: "Erreur serveur lors de la récupération de l'élève" });
     }
 });
-
-
 
 module.exports = router;

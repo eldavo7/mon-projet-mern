@@ -15,8 +15,12 @@ const Login = ({ onLogin }) => {
     useEffect(() => {
         const token = localStorage.getItem('token');
         const role = localStorage.getItem('role');
+        
+        // Ajustement pour prendre en compte tous les rôles enseignants / admin lors du rechargement
         if (token && role) {
-            const target = role === 'admin' ? '/DashboardProf' : '/DashboardEtudiant';
+            const target = (role === 'admin' || role === 'prof' || role === 'professeur') 
+                ? '/DashboardProf' 
+                : '/DashboardEtudiant';
             navigate(target);
         }
     }, [navigate]);
@@ -33,8 +37,7 @@ const Login = ({ onLogin }) => {
             // On vérifie si la connexion est réussie
             if (result && result.success) {
                 
-                // GESTION DU DOUBLE EMBALLAGE (vu sur ta photo console)
-                // Si result.data contient lui-même un objet data, on descend d'un cran
+                // GESTION DU DOUBLE EMBALLAGE
                 const cleanData = result.data?.data ? result.data.data : (result.data || result);
                 
                 const userData = cleanData.user;
@@ -43,15 +46,19 @@ const Login = ({ onLogin }) => {
                 if (userData && token) {
                     const userRole = userData.role;
 
-                    // On stocke tout dans le localStorage
+                    // --- STOCKAGE DANS LE LOCALSTORAGE ---
                     localStorage.setItem('token', token);
                     localStorage.setItem('role', userRole);
                     localStorage.setItem('user', JSON.stringify(userData));
 
+                    // --- CRÉATION DU TIMESTAMP DE CONNEXION (DURÉE : 1H MAX) ---
+                    const maintenant = new Date().getTime();
+                    localStorage.setItem('loginTimestamp', maintenant.toString());
+
                     onLogin(userRole);
 
                     // Redirection intelligente
-                    if (userRole === 'admin' || userRole === 'professeur') {
+                    if (userRole === 'admin' || userRole === 'prof' || userRole === 'professeur') {
                         navigate('/DashboardProf');
                     } else {
                         navigate('/DashboardEtudiant');
