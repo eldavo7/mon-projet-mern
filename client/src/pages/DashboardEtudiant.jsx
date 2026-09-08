@@ -1,184 +1,150 @@
 // client/src/pages/DashboardEtudiant.jsx
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-    LogOut, BookOpen, Calendar, Award, 
-    Bell, GraduationCap, Mail, ChevronDown, 
-    User, Home
-} from 'lucide-react';
+import { useNavigate, Outlet } from 'react-router-dom';
+import { BookOpen, Award, Clock } from 'lucide-react';
 
 import { formatFullName } from '../utils/formatters';
+import Navbar from '../components/Navbar';
 
-const DashboardEtudiant = () => {
-    const navigate = useNavigate();
-    const [student, setStudent] = useState(null);
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
+/* ==========================================================================
+   1. SOUS-COMPOSANT : VUE ACCUEIL ÉTUDIANT (Tableau de bord principal)
+   ========================================================================== */
+export const VueAccueilEtudiant = () => {
+  const etudiant = JSON.parse(localStorage.getItem('user'));
+  const dateParis = new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long'
+  }).format(new Date());
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setStudent(JSON.parse(storedUser));
-        } else {
-            navigate('/');
-        }
-    }, [navigate]);
-
-    const handleLogout = () => {
-        localStorage.clear();
-        navigate('/');
-    };
-
-    if (!student) return null;
-
-    // Liste des routes accessibles par l'étudiant
-    const studentRoutes = [
-        { label: "Accueil / Dashboard", path: "/DashboardEtudiant", icon: Home },
-        { label: "Messagerie", path: "/messagerie", icon: Mail },
-        { label: "Mon Planning", path: "/planning", icon: Calendar },
-        { label: "Mon Profil", path: `/profil-etudiant/${student._id || student.id_unique}`, icon: User },
-    ];
-
-    return (
-        <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col">
-            
-            {/* --- NAVBAR ÉTUDIANT --- */}
-            <nav className="bg-white border-b border-slate-100 px-6 py-4 flex justify-between items-center shadow-sm sticky top-0 z-50">
-                
-                {/* MENU DÉROULANT DES ROUTES */}
-                <div className="relative">
-                    <button 
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded-2xl transition-all font-black text-sm uppercase italic"
-                    >
-                        <GraduationCap size={22} className="text-violet-600" />
-                        <span>Honoré d'Urfé</span>
-                        <ChevronDown size={18} className={`transition-transform duration-200 ${isMenuOpen ? 'rotate-180' : ''}`} />
-                    </button>
-
-                    {/* MENU POPUP */}
-                    {isMenuOpen && (
-                        <div className="absolute top-full left-0 mt-2 w-60 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-50">
-                            <p className="px-4 py-2 text-[10px] font-black uppercase text-slate-400 tracking-wider">Navigation</p>
-                            {studentRoutes.map((route, idx) => {
-                                const IconComponent = route.icon;
-                                return (
-                                    <button
-                                        key={idx}
-                                        onClick={() => {
-                                            navigate(route.path);
-                                            setIsMenuOpen(false);
-                                        }}
-                                        className="w-full text-left px-4 py-2.5 flex items-center gap-3 text-sm font-bold text-slate-700 hover:bg-violet-50 hover:text-violet-600 transition-colors"
-                                    >
-                                        <IconComponent size={18} />
-                                        {route.label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    )}
-                </div>
-
-                {/* ACTIONS BOUTONS */}
-                <div className="flex items-center gap-4">
-                    <button 
-                        onClick={() => navigate('/messagerie')}
-                        className="p-2 text-slate-400 hover:text-violet-600 transition-colors relative"
-                        title="Ouvrir la messagerie ENT"
-                    >
-                        <Bell size={24} />
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                    </button>
-                    <button onClick={handleLogout} className="p-2 text-red-500 hover:bg-red-50 rounded-xl transition-all" title="Déconnexion">
-                        <LogOut size={24} />
-                    </button>
-                </div>
-            </nav>
-
-            {/* --- MAIN CONTENT --- */}
-            <main className="flex-1 p-6 md:p-12 lg:p-20 max-w-7xl mx-auto w-full">
-                
-                {/* --- HEADER --- */}
-                <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-                    <div>
-                        <p className="text-violet-600 font-black text-sm tracking-widest uppercase mb-2">Espace Étudiant</p>
-                        <h1 className="text-4xl md:text-5xl font-black text-slate-900 italic leading-none">
-                            Salut, <br/>
-                            <span className="text-violet-600">
-                                {formatFullName(student.prenom, student.nom)}
-                            </span>
-                        </h1>
-                        <div className="flex items-center gap-3 mt-4">
-                            <span className="px-4 py-1.5 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded-full">
-                                {student.classe}
-                            </span>
-                            <span className="text-slate-400 font-bold text-xs uppercase italic">
-                                ID: {student.id_unique}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div className="hidden md:flex items-center gap-4 bg-white p-4 rounded-[2rem] border border-slate-100 shadow-sm">
-                        <div className="w-12 h-12 bg-violet-100 rounded-2xl flex items-center justify-center text-violet-600 font-black italic">
-                            {student.prenom[0].toUpperCase()}
-                        </div>
-                        <div>
-                            <p className="text-[10px] font-black text-slate-400 uppercase leading-none mb-1">Dernière connexion</p>
-                            <p className="text-sm font-bold text-slate-700">Aujourd'hui, 08:15</p>
-                        </div>
-                    </div>
-                </header>
-
-                {/* --- GRILLE DE BORD --- */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    
-                    {/* Widget Emploi du Temps */}
-                    <div 
-                        onClick={() => navigate('/planning')}
-                        className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group"
-                    >
-                        <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                            <Calendar size={24} />
-                        </div>
-                        <h3 className="text-lg font-black italic uppercase mb-2">Cours de 10h</h3>
-                        <p className="text-slate-400 font-bold text-sm uppercase">Mathématiques • Salle 204</p>
-                    </div>
-
-                    {/* Widget Notes */}
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group">
-                        <div className="w-12 h-12 bg-green-50 text-green-500 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-green-500 group-hover:text-white transition-colors">
-                            <Award size={24} />
-                        </div>
-                        <h3 className="text-lg font-black italic uppercase mb-2">Moyenne</h3>
-                        <p className="text-slate-400 font-bold text-sm uppercase">14.5 / 20 • 2ème Trimestre</p>
-                    </div>
-
-                    {/* Widget Travail à faire */}
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 hover:shadow-xl hover:-translate-y-1 transition-all cursor-pointer group">
-                        <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                            <BookOpen size={24} />
-                        </div>
-                        <h3 className="text-lg font-black italic uppercase mb-2">Devoirs</h3>
-                        <p className="text-slate-400 font-bold text-sm uppercase">3 exercices • À rendre demain</p>
-                    </div>
-
-                    {/* Widget Messagerie ENT */}
-                    <div 
-                        onClick={() => navigate('/messagerie')}
-                        className="bg-violet-600 p-8 rounded-[2.5rem] shadow-lg shadow-violet-200 text-white hover:scale-105 transition-all cursor-pointer"
-                    >
-                        <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6">
-                            <Mail size={24} />
-                        </div>
-                        <h3 className="text-lg font-black italic uppercase mb-2">Messagerie</h3>
-                        <p className="text-violet-100 font-bold text-sm uppercase">Consulter tes messages</p>
-                    </div>
-
-                </div>
-
-            </main>
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 animate-in fade-in duration-500">
+      
+      {/* Colonne Gauche : Résumé Prochains Cours / Devoirs */}
+      <div className="lg:col-span-2 bg-white rounded-[3.5rem] p-12 shadow-sm border border-slate-100">
+        <div className="flex justify-between items-center mb-12">
+          <h2 className="text-3xl font-black flex items-center gap-4 italic text-slate-800 tracking-tighter">
+            <div className="p-3 bg-indigo-100 rounded-2xl">
+              <BookOpen className="text-indigo-600" size={28} />
+            </div>
+            Mon programme du jour
+          </h2>
+          <span className="bg-slate-50 px-6 py-3 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest border border-slate-100">
+            {dateParis}
+          </span>
         </div>
-    );
+
+        <div className="p-8 bg-slate-50 rounded-[2.5rem] border border-dashed border-slate-200 flex flex-col items-center justify-center text-center">
+          <Clock className="text-slate-300 mb-3" size={40} />
+          <p className="font-black italic text-slate-500 text-lg mb-2 uppercase tracking-tight">
+            Consultation de l'emploi du temps
+          </p>
+          <p className="text-xs text-slate-400 font-semibold max-w-sm">
+            Retrouvez tous vos cours, horaires et devoirs directement dans l'onglet Planning.
+          </p>
+        </div>
+      </div>
+
+      {/* Colonne Droite : Carte Informations Étudiant */}
+      <section className="bg-indigo-600 rounded-[3.5rem] p-12 text-white shadow-2xl relative overflow-hidden">
+        <h2 className="text-2xl font-black mb-10 flex items-center gap-3 italic tracking-tighter">
+          <Award size={28} /> Carte Étudiant
+        </h2>
+
+        <div className="space-y-6">
+          <div className="bg-white/10 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/10">
+            <p className="text-[10px] font-black opacity-60 uppercase tracking-[0.2em] mb-2">
+              Classe / Promotion
+            </p>
+            <p className="text-2xl font-black italic uppercase">
+              {etudiant?.classe || 'Élève'}
+            </p>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-md p-8 rounded-[2.5rem] border border-white/10">
+            <p className="text-[10px] font-black opacity-60 uppercase tracking-[0.2em] mb-2">
+              Identifiant ÉLÈVE
+            </p>
+            <p className="text-xl font-black">{etudiant?.id_unique || etudiant?._id}</p>
+          </div>
+        </div>
+
+        {/* Décoration d'arrière-plan */}
+        <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-white/5 rounded-full blur-3xl"></div>
+      </section>
+
+    </div>
+  );
+};
+
+/* ==========================================================================
+   2. COMPOSANT PRINCIPAL : LAYOUT DASHBOARD ÉTUDIANT
+   ========================================================================== */
+const DashboardEtudiant = () => {
+  const navigate = useNavigate();
+  const [etudiant, setEtudiant] = useState(null);
+
+  const dateParisComplet = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: 'Europe/Paris',
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+  }).format(new Date());
+
+  // Authentification et rôle
+  useEffect(() => {
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+      const role = parsedUser.role ? parsedUser.role.toLowerCase() : '';
+      if (role !== 'etudiant' && role !== 'eleve') {
+        navigate('/');
+      } else {
+        setEtudiant(parsedUser);
+      }
+    } else {
+      navigate('/');
+    }
+  }, [navigate]);
+
+  if (!etudiant) return null;
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col overflow-x-hidden relative">
+      
+      {/* NAVBAR AVEC ADAPTATION DE RÔLE */}
+      <Navbar user={etudiant} />
+
+      {/* CONTENU PRINCIPAL */}
+      <main className="flex-1 p-6 md:p-12 lg:p-16 max-w-7xl mx-auto w-full">
+        
+        {/* En-tête de la page */}
+        <header className="mb-10">
+          <p className="text-indigo-600 font-black text-xs tracking-[0.2em] uppercase mb-3">
+            Espace Élève
+          </p>
+          <h1 className="text-4xl md:text-5xl font-black text-slate-900 italic tracking-tighter leading-[0.9]">
+            Bonjour, {' '} <span className="text-indigo-600 underline decoration-slate-200 underline-offset-[12px]">
+              {formatFullName(etudiant.prenom, etudiant.nom)}
+            </span>
+          </h1>
+          <div className="text-slate-400 font-bold mt-8 uppercase text-[10px] flex items-center gap-2">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            {dateParisComplet}
+          </div>
+        </header>
+
+        {/* Zone de rendu dynamique des vues (Accueil, Planning, Messagerie, etc.) */}
+        <div className="mt-8">
+          <Outlet context={{ etudiant }} />
+        </div>
+
+      </main>
+
+    </div>
+  );
 };
 
 export default DashboardEtudiant;

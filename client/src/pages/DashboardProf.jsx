@@ -2,10 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
-import {
-  CheckCircle,
-  AlertCircle
-} from 'lucide-react';
+import { CheckCircle, AlertCircle } from 'lucide-react';
 
 import { formatFullName } from '../utils/formatters';
 import Navbar from '../components/Navbar';
@@ -101,7 +98,7 @@ const DashboardProf = () => {
     if (storedUser) {
       const parsedUser = JSON.parse(storedUser);
       const role = parsedUser.role ? parsedUser.role.toLowerCase() : '';
-      if (role !== 'prof' && role !== 'professeur') {
+      if (role !== 'prof' && role !== 'professeur' && role !== 'admin') {
         navigate('/');
       } else {
         setProf(parsedUser);
@@ -116,30 +113,32 @@ const DashboardProf = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col overflow-x-hidden relative">
       
-      {/* NAVBAR UNIQUE ET UNIFIÉE */}
+      {/* NAVBAR AVEC NAVIGATION INTEGRÉE */}
       <Navbar user={prof} />
 
       {/* CONTENU PRINCIPAL */}
       <main className="flex-1 p-6 md:p-12 lg:p-16 max-w-7xl mx-auto w-full">
         
-        {/* En-tête de la page */}
+{/* En-tête de la page */}
         <header className="mb-10">
           <p className="text-violet-600 font-black text-xs tracking-[0.2em] uppercase mb-3">
             Espace Enseignant
           </p>
+
           <h1 className="text-4xl md:text-5xl font-black text-slate-900 italic tracking-tighter leading-[0.9]">
-            Bonjour, <br/>
+            Bonjour,{' '}
             <span className="text-violet-600 underline decoration-slate-200 underline-offset-[12px]">
-              Prof. {formatFullName(prof.prenom, prof.nom)}
+              {formatFullName(prof.prenom, prof.nom)}
             </span>
           </h1>
+
           <div className="text-slate-400 font-bold mt-8 uppercase text-[10px] flex items-center gap-2">
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             {dateParisComplet}
           </div>
         </header>
 
-        {/* Zone de rendu des sous-routes (Messagerie, Planning, etc.) */}
+        {/* Zone de rendu des sous-routes (Messagerie, Planning, Gestion Élèves, VueAccueilProf) */}
         <div className="mt-8">
           <Outlet context={{ prof }} />
         </div>
@@ -151,5 +150,3 @@ const DashboardProf = () => {
 };
 
 export default DashboardProf;
-
-export { default as VuePlanning } from './PlanningProf';

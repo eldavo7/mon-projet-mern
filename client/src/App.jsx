@@ -4,12 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 
 import Login from './pages/Login';
-import DashboardProf, { VueAccueilProf, VuePlanning } from './pages/DashboardProf';
-import DashboardEtudiant from './pages/DashboardEtudiant';
+import DashboardProf, { VueAccueilProf } from './pages/DashboardProf';
+import DashboardEtudiant, { VueAccueilEtudiant } from './pages/DashboardEtudiant';
 import GestionEleves from './pages/GestionEleves';
 import ProfilEtudiant from './pages/ProfilEtudiant';
 import Messagerie from './pages/Messagerie';
 import Conditions from './components/Conditions';
+import PlanningProf from './pages/PlanningProf';
 
 // --- FONCTION DE SÉCURITÉ : VÉRIFICATION DE L'EXPIRATION TIMEOUT (1H) ---
 const checkSessionExpiration = () => {
@@ -99,7 +100,7 @@ export default function App() {
         }
       >
         <Route index element={<VueAccueilProf />} />
-        <Route path="planning" element={<VuePlanning />} />
+        <Route path="planning" element={<PlanningProf />} />
         <Route path="gestion-eleve" element={<GestionEleves />} />
         <Route path="messagerie" element={<Messagerie />} />
       </Route>
@@ -108,17 +109,21 @@ export default function App() {
       <Route 
         path="/DashboardEtudiant" 
         element={
-          <PrivateRoute requiredRoles={['etudiant']}>
+          <PrivateRoute requiredRoles={['etudiant', 'eleve']}>
             <DashboardEtudiant />
           </PrivateRoute>
         } 
-      />
+      >
+        <Route index element={<VueAccueilEtudiant />} />
+        <Route path="planning" element={<PlanningProf />} />
+        <Route path="messagerie" element={<Messagerie />} />
+      </Route>
 
-      {/* Messagerie Générale (Accessible par tous les utilisateurs connectés) */}
+      {/* Messagerie Générale */}
       <Route 
         path="/messagerie" 
         element={
-          <PrivateRoute requiredRoles={['prof', 'admin', 'professeur', 'etudiant']}>
+          <PrivateRoute requiredRoles={['prof', 'admin', 'professeur', 'etudiant', 'eleve']}>
             <Messagerie />
           </PrivateRoute>
         } 
@@ -128,7 +133,7 @@ export default function App() {
       <Route 
         path="/etudiant/:id" 
         element={
-          <PrivateRoute requiredRoles={['prof', 'admin', 'professeur', 'etudiant']}>
+          <PrivateRoute requiredRoles={['prof', 'admin', 'professeur', 'etudiant', 'eleve']}>
             <ProfilEtudiant />
           </PrivateRoute>
         } 
