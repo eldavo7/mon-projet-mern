@@ -37,16 +37,17 @@ mon-projet-mern/
 │
 └── .gitignore
 
-# Gestion des Notes - Espace Professeur
 
-## Nouvelles Fonctionnalités (Mise à jour - modif_6)
-Cette version apporte des améliorations majeures dans la gestion du suivi des élèves par les enseignants :
-- **Modification des notes :** Les professeurs peuvent désormais éditer une note existante (matière, valeur, coefficient, appréciation) directement depuis le tableau du relevé de notes.
-- **Changement de trimestre :** Possibilité de réassigner une note d'un trimestre à un autre lors de sa modification.
-- **Suppression des notes :** Ajout d'un bouton de suppression rapide pour chaque ligne de note.
-- **Sécurité et Synchronisation :** Toutes les modifications (ajout, modification, suppression) sont immédiatement sauvegardées et synchronisées via l'API REST (`PATCH`).
 
-## Technologies Utilisées
-- **Frontend :** React.js (JSX, Hooks useState)
-- **Backend :** Node.js / Express
-- **Style :** Tailwind CSS
+
+# ENT Honoré d'Urfé — Espace Enseignant (MERN Stack)
+
+Mise à jour et enrichissement de l'interface de gestion des notes pour les enseignants sur la plateforme ENT.
+
+## Nouvelles Fonctionnalités
+
+* **Gestion complète des notes pour les professeurs** : 
+  * Ajout de notes par trimestre avec choix dynamique du barème (sur /20, /10, /5, /40, /100).
+  * Modification et mise à jour des notes existantes (valeur, coefficient, appréciation).
+  * Suppression de notes directement depuis le relevé de notes de l'élève.
+* **Intégration de l'interface de saisie** : Formulaire d'ajout de notes intégré et ergonomique au sein de la vue "Relevé de notes", accessible pour le profil enseignant en mode édition.

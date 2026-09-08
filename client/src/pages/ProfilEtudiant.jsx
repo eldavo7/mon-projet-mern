@@ -63,7 +63,7 @@ const ProfilEtudiant = () => {
   const [justificationForm, setJustificationForm] = useState({ motif: 'Raison médicale / Maladie', explication: '' });
 
   // Formulaires
-  const [newNote, setNewNote] = useState({ matiere: '', note: '', coef: 1, appreciation: '', trimestre: 'T1' });
+  const [newNote, setNewNote] = useState({ matiere: '', note: '', noteSur: 20, coef: 1, appreciation: '', trimestre: 'T1' });
   const [newMot, setNewMot] = useState('');
   const [newAbsence, setNewAbsence] = useState({ motif: '', cours: '', date: '', type: 'Absence', trimestre: 'T1' });
 
@@ -238,7 +238,7 @@ const ProfilEtudiant = () => {
     }
   };
 
-  const handleAddNote = async (e) => {
+    const handleAddNote = async (e) => {
     e.preventDefault();
     if (!newNote.matiere || newNote.note === '') return;
 
@@ -250,15 +250,17 @@ const ProfilEtudiant = () => {
         { 
           matiere: newNote.matiere, 
           note: Number(newNote.note), 
+          noteSur: Number(newNote.noteSur) || 20, // <-- Ajout du barème ici
           coef: Number(newNote.coef), 
           appreciation: newNote.appreciation 
         }
       ]
     };
-
+    
+    
     setStudent({ ...student, notes: updatedNotes });
     const profMatiere = currentUser?.matiere || currentUser?.subject || newNote.matiere;
-    setNewNote({ matiere: profMatiere, note: '', coef: 1, appreciation: '', trimestre: t });
+    setNewNote({ matiere: profMatiere, note: '', noteSur: 20, coef: 1, appreciation: '', trimestre: t });
 
     try {
       await fetch(`http://localhost:5001/api/students/${id}`, {
@@ -297,8 +299,7 @@ const ProfilEtudiant = () => {
     setEditingNoteIndex({ trimestre, index });
     setEditNoteForm({ ...item, trimestre });
   };
-
-  const handleSaveEditNote = async (e) => {
+const handleSaveEditNote = async (e) => {
     e.preventDefault();
     if (!editingNoteIndex) return;
 
@@ -312,6 +313,7 @@ const ProfilEtudiant = () => {
       list[index] = {
         matiere: editNoteForm.matiere,
         note: Number(editNoteForm.note),
+        noteSur: Number(editNoteForm.noteSur) || 20, // <-- Ajout ici
         coef: Number(editNoteForm.coef),
         appreciation: editNoteForm.appreciation
       };
@@ -326,6 +328,7 @@ const ProfilEtudiant = () => {
         {
           matiere: editNoteForm.matiere,
           note: Number(editNoteForm.note),
+          noteSur: Number(editNoteForm.noteSur) || 20, // <-- Et ici aussi
           coef: Number(editNoteForm.coef),
           appreciation: editNoteForm.appreciation
         }
@@ -345,8 +348,6 @@ const ProfilEtudiant = () => {
       console.error('Erreur modification note:', err);
     }
   };
-
-
   const handleAddMot = async (e) => {
     e.preventDefault();
     if (!newMot) return;
@@ -515,6 +516,7 @@ const ProfilEtudiant = () => {
           </button>
         </div>
 
+
         {/* VUE 1 : RELEVÉ DE NOTES */}
         {activeTab === 'releve' && (
           <div className="space-y-6">
@@ -539,14 +541,13 @@ const ProfilEtudiant = () => {
                 Relevé de notes — Trimestre {selectedTrimestreBulletin.replace('T', '')}
               </h3>
 
-
-{student.notes?.[selectedTrimestreBulletin]?.length > 0 ? (
+              {student.notes?.[selectedTrimestreBulletin]?.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="border-b border-slate-100 text-[10px] font-black uppercase text-slate-400 tracking-wider">
                         <th className="pb-4">Matière</th>
-                        <th className="pb-4">Note / 20</th>
+                        <th className="pb-4">Note</th>
                         <th className="pb-4">Coef</th>
                         <th className="pb-4">Appréciation</th>
                         {isProf && isEditing && <th className="pb-4 text-right">Actions</th>}
@@ -569,13 +570,27 @@ const ProfilEtudiant = () => {
                                 />
                               </td>
                               <td className="py-3">
-                                <input
-                                  type="number"
-                                  step="0.5"
-                                  value={editNoteForm.note}
-                                  onChange={(e) => setEditNoteForm({ ...editNoteForm, note: e.target.value })}
-                                  className="bg-white border border-slate-200 text-xs font-bold p-2 rounded-lg w-20"
-                                />
+                                <div className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    step="0.5"
+                                    value={editNoteForm.note}
+                                    onChange={(e) => setEditNoteForm({ ...editNoteForm, note: e.target.value })}
+                                    className="bg-white border border-slate-200 text-xs font-bold p-2 rounded-lg w-16"
+                                  />
+                                  <span className="text-slate-400">/</span>
+                                  <select
+                                    value={editNoteForm.noteSur || 20}
+                                    onChange={(e) => setEditNoteForm({ ...editNoteForm, noteSur: e.target.value })}
+                                    className="bg-white border border-slate-200 text-xs font-bold p-2 rounded-lg"
+                                  >
+                                    <option value="20">20</option>
+                                    <option value="10">10</option>
+                                    <option value="5">5</option>
+                                    <option value="40">40</option>
+                                    <option value="100">100</option>
+                                  </select>
+                                </div>
                               </td>
                               <td className="py-3">
                                 <input
@@ -610,7 +625,7 @@ const ProfilEtudiant = () => {
                             <td className="py-4 font-black text-slate-900">{item.matiere}</td>
                             <td className="py-4">
                               <span className="font-black text-violet-600 bg-violet-50 px-3.5 py-1.5 rounded-xl">
-                                {item.note} / 20
+                                {item.note} / {item.noteSur || 20}
                               </span>
                             </td>
                             <td className="py-4 font-bold">{item.coef}</td>
@@ -642,6 +657,96 @@ const ProfilEtudiant = () => {
                   Aucune note enregistrée pour le moment.
                 </p>
               )}
+
+              {/* Formulaire prof pour ajouter une note (intégré proprement ici) */}
+              {isProf && isEditing && (
+                <div className="mt-8 bg-violet-50/70 p-6 rounded-[2.5rem] border border-violet-100 space-y-4">
+                  <h4 className="font-black text-xs text-violet-900 uppercase tracking-widest">Ajouter une nouvelle note</h4>
+                  <form onSubmit={handleAddNote} className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-violet-700 mb-1">Matière</label>
+                      <input
+                        type="text"
+                        list="liste-matieres"
+                        placeholder="Matière"
+                        value={newNote.matiere}
+                        onChange={(e) => setNewNote({ ...newNote, matiere: e.target.value })}
+                        className="w-full bg-white border border-violet-200 text-xs font-bold p-3 rounded-xl text-slate-800 focus:outline-none focus:border-violet-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-violet-700 mb-1">Note / Barème</label>
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          step="0.5"
+                          placeholder="Note"
+                          value={newNote.note}
+                          onChange={(e) => setNewNote({ ...newNote, note: e.target.value })}
+                          className="w-full bg-white border border-violet-200 text-xs font-bold p-3 rounded-xl text-slate-800 focus:outline-none focus:border-violet-600"
+                        />
+                        <span className="text-slate-400 font-bold">/</span>
+                        <select
+                          value={newNote.noteSur || 20}
+                          onChange={(e) => setNewNote({ ...newNote, noteSur: e.target.value })}
+                          className="bg-white border border-violet-200 text-xs font-bold p-3 rounded-xl text-slate-800 focus:outline-none focus:border-violet-600"
+                        >
+                          <option value="20">20</option>
+                          <option value="10">10</option>
+                          <option value="5">5</option>
+                          <option value="40">40</option>
+                          <option value="100">100</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-violet-700 mb-1">Coefficient</label>
+                      <input
+                        type="number"
+                        step="1"
+                        value={newNote.coef}
+                        onChange={(e) => setNewNote({ ...newNote, coef: e.target.value })}
+                        className="w-full bg-white border border-violet-200 text-xs font-bold p-3 rounded-xl text-slate-800 focus:outline-none focus:border-violet-600"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black uppercase text-violet-700 mb-1">Trimestre</label>
+                      <select
+                        value={newNote.trimestre}
+                        onChange={(e) => setNewNote({ ...newNote, trimestre: e.target.value })}
+                        className="w-full bg-white border border-violet-200 text-xs font-bold p-3 rounded-xl text-slate-800 focus:outline-none focus:border-violet-600"
+                      >
+                        <option value="T1">Trimestre 1</option>
+                        <option value="T2">Trimestre 2</option>
+                        <option value="T3">Trimestre 3</option>
+                      </select>
+                    </div>
+
+                    <div className="sm:col-span-5">
+                      <label className="block text-[10px] font-black uppercase text-violet-700 mb-1">Appréciation (optionnelle)</label>
+                      <div className="flex gap-3">
+                        <input
+                          type="text"
+                          placeholder="Commentaire de l'évaluation..."
+                          value={newNote.appreciation}
+                          onChange={(e) => setNewNote({ ...newNote, appreciation: e.target.value })}
+                          className="flex-1 bg-white border border-violet-200 text-xs font-bold p-3 rounded-xl text-slate-800 focus:outline-none focus:border-violet-600"
+                        />
+                        <button
+                          type="submit"
+                          className="px-6 py-3 bg-violet-600 hover:bg-violet-500 text-white rounded-xl font-black text-xs uppercase tracking-wider transition-all shadow-md shadow-violet-200 shrink-0"
+                        >
+                          Enregistrer la note
+                        </button>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              )}
+
             </div>
           </div>
         )}
