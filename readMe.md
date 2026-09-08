@@ -37,18 +37,16 @@ mon-projet-mern/
 │
 └── .gitignore
 
-### Commit / Branch: modif_5
+# Gestion des Notes - Espace Professeur
 
-## 🚀 Modifications effectuées
+## Nouvelles Fonctionnalités (Mise à jour - modif_6)
+Cette version apporte des améliorations majeures dans la gestion du suivi des élèves par les enseignants :
+- **Modification des notes :** Les professeurs peuvent désormais éditer une note existante (matière, valeur, coefficient, appréciation) directement depuis le tableau du relevé de notes.
+- **Changement de trimestre :** Possibilité de réassigner une note d'un trimestre à un autre lors de sa modification.
+- **Suppression des notes :** Ajout d'un bouton de suppression rapide pour chaque ligne de note.
+- **Sécurité et Synchronisation :** Toutes les modifications (ajout, modification, suppression) sont immédiatement sauvegardées et synchronisées via l'API REST (`PATCH`).
 
-* **Layout & Navigation Dynamique :**
-  * Intégration du composant réutilisable `Navbar` dans `DashboardEtudiant.jsx` et `DashboardProf.jsx`.
-  * Prise en charge automatique du rôle utilisateur (Enseignant / Élève) pour adapter les liens et les styles.
-
-* **Responsivité & UX Mobile :**
-  * Ajout d'un menu déroulant mobile (`Dropdown`) dans la `Navbar` pour remplacer la navigation masquée sur petits écrans.
-  * Harmonisation des en-têtes (titres `h1` sur une seule ligne) et correction de la sémantique HTML (`<p>`/`<h1>`).
-
-* **Routage React Router :**
-  * Configuration des sous-routes emboîtées (`<Outlet />`) dans `App.jsx` pour l'espace Étudiant (`planning`, `messagerie`).
-  * Nettoyage des imports obsolètes (`VuePlanning`).
+## Technologies Utilisées
+- **Frontend :** React.js (JSX, Hooks useState)
+- **Backend :** Node.js / Express
+- **Style :** Tailwind CSS

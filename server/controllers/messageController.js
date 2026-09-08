@@ -135,7 +135,6 @@ exports.getDestinataires = async (req, res) => {
     const currentUserId = req.query.userId || req.user?._id || req.user?.id;
     const contactsMap = new Map();
 
-    // 1. Récupération dans la collection Prof
     if (Prof) {
       const profsList = await Prof.find({}, 'nom prenom matiere role').lean();
       profsList.forEach(p => {
@@ -150,7 +149,6 @@ exports.getDestinataires = async (req, res) => {
       });
     }
 
-    // 2. Récupération dans la collection Etudiant / Eleve
     if (Etudiant) {
       const etudiantsList = await Etudiant.find({}, 'nom prenom classe role').lean();
       etudiantsList.forEach(e => {
@@ -167,7 +165,6 @@ exports.getDestinataires = async (req, res) => {
       });
     }
 
-    // 3. Récupération dans la collection User (complète si collections séparées non exhaustives)
     if (User) {
       const usersList = await User.find({}, 'nom prenom role classe matiere').lean();
       usersList.forEach(u => {
@@ -186,10 +183,8 @@ exports.getDestinataires = async (req, res) => {
       });
     }
 
-    // Conversion de la Map en tableau
     let contacts = Array.from(contactsMap.values());
 
-    // Filtrer l'utilisateur connecté de la liste des choix
     if (currentUserId) {
       contacts = contacts.filter(c => c._id !== currentUserId.toString());
     }
