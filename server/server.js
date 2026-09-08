@@ -3,7 +3,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const connectDB = require('./config/db');
-
+const notificationRoutes = require('./routes/notificationRoutes');
 const app = express();
 
 connectDB();
@@ -25,6 +25,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
 app.use('/api/planningProf', planningRoutes);
 app.use('/api/messages', messageRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // 5. Route de test
 app.get('/', (req, res) => {

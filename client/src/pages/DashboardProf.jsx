@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { CheckCircle, AlertCircle } from 'lucide-react';
+import axios from 'axios'; // <-- 1. Importe axios
 
 import { formatFullName } from '../utils/formatters';
 import Navbar from '../components/Navbar';
@@ -83,6 +84,7 @@ export const VueAccueilProf = () => {
 const DashboardProf = () => {
   const navigate = useNavigate();
   const [prof, setProf] = useState(null);
+  const [notifications, setNotifications] = useState([]); // <-- 2. État des notifications
 
   const dateParisComplet = new Intl.DateTimeFormat('fr-FR', {
     timeZone: 'Europe/Paris',
@@ -92,7 +94,7 @@ const DashboardProf = () => {
     year: 'numeric'
   }).format(new Date());
 
-  // Vérification de la session et authentification
+  // Vérification de la session et authentification + chargement des notifications
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -102,24 +104,47 @@ const DashboardProf = () => {
         navigate('/');
       } else {
         setProf(parsedUser);
+        
+        // 3. Récupération des notifications du prof
+        const userId = parsedUser._id || parsedUser.id;
+        axios.get(`http://localhost:5001/api/notifications/${userId}`)
+          .then(res => setNotifications(res.data))
+          .catch(err => console.error("Erreur chargement notifications:", err));
       }
     } else {
       navigate('/');
     }
   }, [navigate]);
 
+  // 4. Fonction pour marquer les notifications comme lues
+  const handleMarkAsRead = async () => {
+    const userId = prof?._id || prof?.id;
+    if (!userId) return;
+
+    try {
+      await axios.patch(`http://localhost:5001/api/notifications/read-all/${userId}`);
+      setNotifications(notifications.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error("Erreur marquage notifications:", err);
+    }
+  };
+
   if (!prof) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col overflow-x-hidden relative">
       
-      {/* NAVBAR AVEC NAVIGATION INTEGRÉE */}
-      <Navbar user={prof} />
+      {/* NAVBAR AVEC PROPS NOTIFICATIONS */}
+      <Navbar 
+        user={prof} 
+        notifications={notifications} 
+        onMarkAsRead={handleMarkAsRead} 
+      />
 
       {/* CONTENU PRINCIPAL */}
       <main className="flex-1 p-6 md:p-12 lg:p-16 max-w-7xl mx-auto w-full">
         
-{/* En-tête de la page */}
+        {/* En-tête de la page */}
         <header className="mb-10">
           <p className="text-violet-600 font-black text-xs tracking-[0.2em] uppercase mb-3">
             Espace Enseignant

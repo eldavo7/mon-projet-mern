@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { BookOpen, Award, Clock } from 'lucide-react';
+import axios from 'axios'; // <-- 1. Importe axios
 
 import { formatFullName } from '../utils/formatters';
 import Navbar from '../components/Navbar';
@@ -84,6 +85,7 @@ export const VueAccueilEtudiant = () => {
 const DashboardEtudiant = () => {
   const navigate = useNavigate();
   const [etudiant, setEtudiant] = useState(null);
+  const [notifications, setNotifications] = useState([]); // <-- 2. État des notifications
 
   const dateParisComplet = new Intl.DateTimeFormat('fr-FR', {
     timeZone: 'Europe/Paris',
@@ -93,7 +95,7 @@ const DashboardEtudiant = () => {
     year: 'numeric'
   }).format(new Date());
 
-  // Authentification et rôle
+  // Authentification, rôle et chargement des notifications
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -103,19 +105,42 @@ const DashboardEtudiant = () => {
         navigate('/');
       } else {
         setEtudiant(parsedUser);
+
+        // 3. Récupération des notifications de l'élève
+        const userId = parsedUser._id || parsedUser.id;
+        axios.get(`http://localhost:5001/api/notifications/${userId}`)
+          .then(res => setNotifications(res.data))
+          .catch(err => console.error("Erreur chargement notifications:", err));
       }
     } else {
       navigate('/');
     }
   }, [navigate]);
 
+  // 4. Fonction pour marquer les notifications comme lues
+  const handleMarkAsRead = async () => {
+    const userId = etudiant?._id || etudiant?.id;
+    if (!userId) return;
+
+    try {
+      await axios.patch(`http://localhost:5001/api/notifications/read-all/${userId}`);
+      setNotifications(notifications.map(n => ({ ...n, read: true })));
+    } catch (err) {
+      console.error("Erreur marquage notifications:", err);
+    }
+  };
+
   if (!etudiant) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans flex flex-col overflow-x-hidden relative">
       
-      {/* NAVBAR AVEC ADAPTATION DE RÔLE */}
-      <Navbar user={etudiant} />
+      {/* NAVBAR AVEC PROPS NOTIFICATIONS */}
+      <Navbar 
+        user={etudiant} 
+        notifications={notifications} 
+        onMarkAsRead={handleMarkAsRead} 
+      />
 
       {/* CONTENU PRINCIPAL */}
       <main className="flex-1 p-6 md:p-12 lg:p-16 max-w-7xl mx-auto w-full">

@@ -38,16 +38,12 @@ mon-projet-mern/
 └── .gitignore
 
 
+# ENT Honoré d'Urfé - Mise à jour du Système de Notifications
 
+Ce projet intègre les dernières améliorations de l'interface utilisateur et de la gestion des notifications pour l'Espace Numérique de Travail (ENT).
 
-# ENT Honoré d'Urfé — Espace Enseignant (MERN Stack)
-
-Mise à jour et enrichissement de l'interface de gestion des notes pour les enseignants sur la plateforme ENT.
-
-## Nouvelles Fonctionnalités
-
-* **Gestion complète des notes pour les professeurs** : 
-  * Ajout de notes par trimestre avec choix dynamique du barème (sur /20, /10, /5, /40, /100).
-  * Modification et mise à jour des notes existantes (valeur, coefficient, appréciation).
-  * Suppression de notes directement depuis le relevé de notes de l'élève.
-* **Intégration de l'interface de saisie** : Formulaire d'ajout de notes intégré et ergonomique au sein de la vue "Relevé de notes", accessible pour le profil enseignant en mode édition.
+## 🚀 Fonctionnalités implémentées
+- **Centre de notifications stylé et aéré** : Design épuré avec un espacement optimisé entre le titre, le compteur et le bouton "Tout marquer comme lu".
+- **Fermeture au clic extérieur** : Le panneau des notifications se ferme automatiquement dès que l'utilisateur clique en dehors de la zone (`useRef` & écouteur d'événements).
+- **Marquage automatique comme lu** : Lorsqu'un utilisateur clique sur une notification spécifique, celle-ci passe automatiquement en statut "lu" et déclenche une redirection intelligente vers la page concernée (notes, vie scolaire ou messagerie).
+- **Sécurité et robustesse backend** : Ajout de blocs `try/catch` dans le contrôleur étudiant (`studentController.js`) pour sécuriser la création des notifications sans bloquer les requêtes principales.

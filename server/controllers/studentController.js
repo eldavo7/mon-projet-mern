@@ -1,5 +1,7 @@
 // server/controllers/studentController.js
 
+const Notification = require('../models/Notification'); // <-- 1. Import du modèle
+
 let User;
 try { User = require('../models/User'); } catch (e) {
   try { User = require('../models/etudiantModel'); } catch (e2) {}
@@ -80,11 +82,33 @@ exports.updateStudent = async (req, res) => {
     if (req.body.notes) {
       student.notes = req.body.notes;
       student.markModified('notes');
+
+      try {
+        await Notification.create({
+          userId: student._id,
+          type: 'note',
+          title: 'Mise à jour de vos notes',
+          description: 'Un enseignant a mis à jour votre relevé de notes.',
+        });
+      } catch (notifErr) {
+        console.error("Erreur création notif note:", notifErr.message);
+      }
     }
 
     if (req.body.absences) {
       student.absences = req.body.absences;
       student.markModified('absences');
+
+      try {
+        await Notification.create({
+          userId: student._id,
+          type: 'retard',
+          title: 'Mise à jour de la vie scolaire',
+          description: 'Un nouvel élément a été ajouté concernant vos absences ou retards.',
+        });
+      } catch (notifErr) {
+        console.error("Erreur création notif retard:", notifErr.message);
+      }
     }
 
     Object.keys(req.body).forEach((key) => {

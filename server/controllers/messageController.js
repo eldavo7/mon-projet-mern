@@ -1,6 +1,7 @@
 // server/controllers/messageController.js
 
 const Message = require('../models/Message');
+const Notification = require('../models/Notification'); // <-- 1. Importe le modèle de notification
 
 // Tentatives de chargement dynamique des modèles
 let Etudiant, Prof, User;
@@ -75,6 +76,21 @@ exports.sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
+
+    // 2. Récupérer les infos de l'expéditeur pour afficher son nom dans la notification
+    const senderInfo = await findUserById(expediteur);
+    const senderName = senderInfo 
+      ? `${senderInfo.prenom || ''} ${senderInfo.nom || ''}`.trim() 
+      : 'un utilisateur';
+
+    // 3. Créer la notification pour le destinataire
+    await Notification.create({
+      userId: destinataire,
+      type: 'message',
+      title: 'Nouveau message',
+      description: `Vous avez reçu un message de ${senderName}.`
+    });
+
     res.status(201).json({ success: true, data: newMessage });
   } catch (error) {
     console.error("Erreur d'envoi du message :", error);
