@@ -11,6 +11,7 @@ import ProfilEtudiant from './pages/ProfilEtudiant';
 import Messagerie from './pages/Messagerie';
 import Conditions from './components/Conditions';
 import PlanningProf from './pages/PlanningProf';
+import PlanningEtudiant from './pages/PlanningEtudiant';
 
 // --- FONCTION DE SÉCURITÉ : VÉRIFICATION DE L'EXPIRATION TIMEOUT (1H) ---
 const checkSessionExpiration = () => {
@@ -115,7 +116,7 @@ export default function App() {
         } 
       >
         <Route index element={<VueAccueilEtudiant />} />
-        <Route path="planning" element={<PlanningProf />} />
+        <Route path="planning" element={<PlanningEtudiant />} />
         <Route path="messagerie" element={<Messagerie />} />
       </Route>
 

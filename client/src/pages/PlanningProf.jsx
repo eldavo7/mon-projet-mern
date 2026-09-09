@@ -1,19 +1,17 @@
 // client/src/pages/PlanningProf.jsx
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
-import { Calendar, Info, Clock, AlertTriangle } from 'lucide-react';
-import API from '../api'; // <-- Utilisation de l'instance API configurée
+import { Calendar, Info, Clock, AlertTriangle, BookOpen, MapPin } from 'lucide-react';
+import API from '../api';
 import GridPlanning from '../components/GridPlanning';
 
 const PlanningProf = () => {
-    // Récupération du prof via le contexte du DashboardProf
     const { prof } = useOutletContext();
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        // Sécurité : si pas de prof ou pas d'ID, on arrête
         if (!prof?.id_unique) {
             setLoading(false);
             return;
@@ -24,37 +22,28 @@ const PlanningProf = () => {
                 setLoading(true);
                 setError(null);
 
-                // Appel via l'instance API (dynamique Mac/Mobile)
                 const response = await API.get('/planningProf');
                 const data = response.data;
 
-                // Extraction des données de la section 'par_classe'
                 const allClasses = data.par_classe;
                 if (!allClasses) {
                     throw new Error("Structure de données invalide : 'par_classe' manquante.");
                 }
 
                 const extractedEvents = [];
-                // On prépare l'ID à chercher, ex: "(PROF-104)"
                 const targetId = `(${prof.id_unique})`;
 
-                // --- ALGORITHME DE RECHERCHE ---
-                // On parcourt chaque classe (ex: "2nde 10", "1ère S 3"...)
                 Object.entries(allClasses).forEach(([nomClasse, jours]) => {
-                    // On parcourt chaque jour (Lundi, Mardi...)
                     Object.entries(jours).forEach(([jour, creneaux]) => {
-                        // On parcourt chaque heure (8h-9h...)
                         Object.entries(creneaux).forEach(([plageHoraire, contenu]) => {
-                            
-                            // Si la cellule contient l'ID du prof (ex: "RENAUD (SVT) (PROF-051)")
                             if (contenu && contenu.includes(targetId)) {
                                 extractedEvents.push({
                                     jour: jour,
-                                    debut: plageHoraire.split('-')[0], // Récupère "8h"
+                                    debut: plageHoraire.split('-')[0],
                                     duree: plageHoraire,
                                     matiere: prof.matiere || "Cours",
                                     classe: nomClasse,
-                                    salle: "SNC" // Salle Non Communiquée ou à extraire si présente
+                                    salle: "SNC"
                                 });
                             }
                         });
@@ -73,7 +62,6 @@ const PlanningProf = () => {
         fetchPlanning();
     }, [prof]);
 
-    // 1. État de chargement
     if (loading) {
         return (
             <div className="h-[500px] flex flex-col items-center justify-center bg-white rounded-[3.5rem] border border-dashed border-slate-200 gap-4">
@@ -85,7 +73,6 @@ const PlanningProf = () => {
         );
     }
 
-    // 2. État d'erreur (404 ou erreur serveur)
     if (error) {
         return (
             <div className="bg-red-50 border-2 border-dashed border-red-200 rounded-[3.5rem] p-12 text-center">
@@ -103,7 +90,7 @@ const PlanningProf = () => {
     }
 
     return (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 w-full space-y-8">
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 w-full space-y-8 pb-12">
             {/* Header du planning */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 px-2">
                 <div className="flex items-center gap-4">
@@ -135,11 +122,61 @@ const PlanningProf = () => {
                 </div>
             </div>
 
-            {/* Affichage de la grille ou message "vide" */}
             {events.length > 0 ? (
-                <div className="bg-white p-2 rounded-[3.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                    <GridPlanning events={events} />
-                </div>
+                <>
+                    {/* Grille PC restaurée avec un conteneur responsive et une taille de vue optimisée */}
+                    <div className="hidden lg:block bg-white p-6 sm:p-8 rounded-[3.5rem] shadow-sm border border-slate-100 overflow-x-auto w-full">
+                        <div className="min-w-[900px] max-w-6xl mx-auto">
+                            <GridPlanning events={events} />
+                        </div>
+                    </div>
+
+                    {/* Vue Cartes verticale optimisée pour tablettes et téléphones */}
+                    <div className="block lg:hidden space-y-4">
+                        <div className="px-2">
+                            <h3 className="text-xs font-black uppercase tracking-widest text-slate-400 italic">
+                                Planning détaillé de la semaine
+                            </h3>
+                        </div>
+                        <div className="space-y-3">
+                            {events.map((ev, index) => (
+                                <div 
+                                    key={index} 
+                                    className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex flex-col gap-3 relative overflow-hidden group hover:border-violet-200 transition-all"
+                                >
+                                    <div className="absolute top-0 left-0 w-2 h-full bg-violet-600"></div>
+                                    <div className="flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <span className="px-3 py-1 bg-violet-50 text-violet-700 font-black text-[10px] uppercase rounded-full tracking-wider">
+                                                {ev.jour}
+                                            </span>
+                                            <span className="px-3 py-1 bg-slate-100 text-slate-700 font-black text-[10px] uppercase rounded-full tracking-wider">
+                                                Classe : {ev.classe}
+                                            </span>
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs">
+                                            <Clock size={14} className="text-violet-500" />
+                                            <span>{ev.duree}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-start gap-3 pt-1">
+                                        <div className="p-2.5 bg-slate-50 rounded-2xl text-slate-700 mt-0.5">
+                                            <BookOpen size={18} className="text-violet-600" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-black text-slate-800 text-base italic leading-snug">
+                                                {ev.matiere}
+                                            </h4>
+                                            <p className="text-[11px] font-semibold text-slate-400 mt-1 flex items-center gap-1">
+                                                <MapPin size={12} /> {ev.salle || "SNC"}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </>
             ) : (
                 <div className="h-96 flex flex-col items-center justify-center bg-slate-50 rounded-[3.5rem] border-2 border-dashed border-slate-200 text-center p-12">
                     <Info size={40} className="text-slate-300 mb-4" />

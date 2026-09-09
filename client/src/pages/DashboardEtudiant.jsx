@@ -163,8 +163,7 @@ const DashboardEtudiant = () => {
 
         {/* Zone de rendu dynamique des vues (Accueil, Planning, Messagerie, etc.) */}
         <div className="mt-8">
-          <Outlet context={{ etudiant }} />
-        </div>
+        <Outlet context={{ user: etudiant }} />        </div>
 
       </main>
 
