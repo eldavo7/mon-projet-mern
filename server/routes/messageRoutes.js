@@ -4,17 +4,9 @@ const router = express.Router();
 const messageController = require('../controllers/messageController');
 const Message = require('../models/Message');
 
-// 1. Destinataires (À placer EN PREMIER)
+// 1. Routes spécifiques et statiques (OBLIGATOIREMENT avant les routes dynamiques `/:userId`)
 router.get('/destinataires', messageController.getDestinataires);
 
-// 2. Envoi de message
-router.post('/', messageController.sendMessage);
-router.post('/send', messageController.sendMessage);
-
-// 3. Récupération globale des messages (Reçus + Envoyés)
-router.get('/:userId', messageController.getMessages);
-
-// 4. Routes de secours (Populate sécurisé avec gestion d'erreur)
 router.get('/boite-reception/:userId', async (req, res) => {
     try {
         const messages = await Message.find({ destinataire: req.params.userId })
@@ -41,7 +33,14 @@ router.get('/messages-envoyes/:userId', async (req, res) => {
     }
 });
 
-// 5. Marquer un message comme lu
+// 2. Envoi de message
+router.post('/', messageController.sendMessage);
+router.post('/send', messageController.sendMessage);
+
+// 3. Route dynamique générale (Récupération globale Reçus + Envoyés)
+router.get('/:userId', messageController.getMessages);
+
+// 4. Marquer un message comme lu
 router.patch('/:id/lire', async (req, res) => {
     try {
         const updated = await Message.findByIdAndUpdate(

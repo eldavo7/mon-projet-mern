@@ -17,8 +17,9 @@ import {
   CheckCheck
 } from 'lucide-react';
 import { formatFullName } from '../utils/formatters';
+import axios from 'axios';
 
-export default function Navbar({ user, notifications = [], onMarkAsRead, onNotificationClick }) {
+export default function Navbar({ user, notifications = [], setNotifications }) {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -51,6 +52,44 @@ export default function Navbar({ user, notifications = [], onMarkAsRead, onNotif
 
   // Filtrer les notifications non lues pour le badge
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Marquer toutes les notifications comme lues via l'API backend
+  const handleMarkAllAsRead = async () => {
+    try {
+      const userId = user?._id || user?.id;
+      const API_BASE = `http://${window.location.hostname}:5001/api`;
+      await axios.put(`${API_BASE}/notifications/read-all/${userId}`);
+      
+      // Mettre à jour l'état localement
+      if (setNotifications) {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      }
+    } catch (err) {
+      console.error("Erreur lors de la mise à jour des notifications :", err);
+    }
+  };
+
+  // Gérer le clic sur une notification spécifique
+  const handleNotifClick = async (notif) => {
+    try {
+      const API_BASE = `http://${window.location.hostname}:5001/api`;
+      if (!notif.read && notif._id) {
+        await axios.put(`${API_BASE}/notifications/read/${notif._id}`);
+        if (setNotifications) {
+          setNotifications(prev => prev.map(n => (n._id === notif._id ? { ...n, read: true } : n)));
+        }
+      }
+    } catch (err) {
+      console.error("Erreur lecture notification:", err);
+    }
+
+    if (notif.type === 'note' || notif.type === 'retard') {
+      navigate(isProf ? '/DashboardProf/gestion-eleve' : `/etudiant/${user?._id || user?.id}`);
+    } else if (notif.type === 'message') {
+      navigate(`${basePath}/messagerie`);
+    }
+    setIsNotifOpen(false);
+  };
 
   const getNotifIcon = (type) => {
     switch (type) {
@@ -180,7 +219,6 @@ export default function Navbar({ user, notifications = [], onMarkAsRead, onNotif
             {isNotifOpen && (
               <div className="absolute right-0 mt-3 w-96 bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 p-6 z-50 animate-in fade-in slide-in-from-top-2">
                 
-                {/* En-tête compact et parfaitement aligné sur une ligne */}
                 <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
                   <div className="flex items-center gap-2 shrink-0">
                     <h4 className="font-black text-slate-800 text-xs uppercase tracking-wider">Notifications</h4>
@@ -188,9 +226,9 @@ export default function Navbar({ user, notifications = [], onMarkAsRead, onNotif
                       {unreadCount}
                     </span>
                   </div>
-                  {unreadCount > 0 && onMarkAsRead && (
+                  {unreadCount > 0 && (
                     <button 
-                      onClick={onMarkAsRead}
+                      onClick={handleMarkAllAsRead}
                       className="text-[11px] font-bold text-slate-400 hover:text-violet-600 flex items-center gap-1.5 transition-colors bg-slate-50 hover:bg-violet-50 px-3 py-1.5 rounded-xl border border-slate-100 shrink-0"
                     >
                       <CheckCheck size={14} /> Tout marquer comme lu
@@ -202,18 +240,8 @@ export default function Navbar({ user, notifications = [], onMarkAsRead, onNotif
                   {notifications.length > 0 ? (
                     notifications.map((notif, idx) => (
                       <div
-                        key={idx}
-                        onClick={() => {
-                          if (onNotificationClick) {
-                            onNotificationClick(notif);
-                          }
-                          if (notif.type === 'note' || notif.type === 'retard') {
-                            navigate(isProf ? '/DashboardProf/gestion-eleve' : `/etudiant/${user?._id || user?.id}`);
-                          } else if (notif.type === 'message') {
-                            navigate(`${basePath}/messagerie`);
-                          }
-                          setIsNotifOpen(false);
-                        }}
+                        key={notif._id || idx}
+                        onClick={() => handleNotifClick(notif)}
                         className={`p-3.5 rounded-2xl transition-all border flex items-start gap-3 cursor-pointer hover:scale-[1.01] ${
                           notif.read ? 'bg-slate-50/50 border-slate-100 opacity-75' : 'bg-slate-50 border-violet-100 hover:bg-violet-50/50 shadow-sm'
                         }`}

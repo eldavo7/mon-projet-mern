@@ -61,8 +61,7 @@ const ProfilEtudiant = () => {
   // Modale & état pour la soumission de justificatif (Élève/Parent)
   const [selectedAbsenceForJustify, setSelectedAbsenceForJustify] = useState(null);
   const [justificationForm, setJustificationForm] = useState({ motif: 'Raison médicale / Maladie', explication: '' });
-
-  // Formulaires
+// Formulaires
   const [newNote, setNewNote] = useState({ matiere: '', note: '', noteSur: 20, coef: 1, appreciation: '', trimestre: 'T1' });
   const [newMot, setNewMot] = useState('');
   const [newAbsence, setNewAbsence] = useState({ motif: '', cours: '', date: '', type: 'Absence', trimestre: 'T1' });
@@ -79,7 +78,7 @@ const ProfilEtudiant = () => {
     setNewNote(prev => ({ ...prev, matiere: profMatiere }));
     setNewAbsence(prev => ({ ...prev, cours: profMatiere }));
 
-    fetch(`http://localhost:5001/api/students/${id}`)
+    fetch(`http://${window.location.hostname}:5001/api/students/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setStudent({

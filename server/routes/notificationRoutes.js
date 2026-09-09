@@ -2,9 +2,10 @@
 
 const express = require('express');
 const router = express.Router();
-const { getNotifications, markAsRead } = require('../controllers/notificationController');
+const { getNotifications, markAsRead, markAllAsRead } = require('../controllers/notificationController');
 
 router.get('/:userId', getNotifications);
-router.patch('/read-all/:userId', markAsRead);
+router.put('/read-all/:userId', markAllAsRead); // Placée en premier
+router.put('/read/:id', markAsRead);           // Placée après
 
 module.exports = router;

@@ -11,11 +11,28 @@ exports.getNotifications = async (req, res) => {
   }
 };
 
-// Marquer tout comme lu
+// Marquer une notification spécifique comme lue (par son ID)
 exports.markAsRead = async (req, res) => {
   try {
+    const notification = await Notification.findByIdAndUpdate(
+      req.params.id,
+      { $set: { read: true } },
+      { new: true }
+    );
+    if (!notification) {
+      return res.status(404).json({ success: false, message: "Notification non trouvée" });
+    }
+    res.status(200).json({ success: true, notification });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Marquer toutes les notifications d'un utilisateur comme lues
+exports.markAllAsRead = async (req, res) => {
+  try {
     await Notification.updateMany({ userId: req.params.userId, read: false }, { $set: { read: true } });
-    res.status(200).json({ success: true, message: "Notifications marquées comme lues" });
+    res.status(200).json({ success: true, message: "Toutes les notifications ont été marquées comme lues" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

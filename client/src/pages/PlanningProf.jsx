@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import { Calendar, Info, Clock, AlertTriangle } from 'lucide-react';
+import API from '../api'; // <-- Utilisation de l'instance API configurée
 import GridPlanning from '../components/GridPlanning';
 
 const PlanningProf = () => {
@@ -23,14 +24,9 @@ const PlanningProf = () => {
                 setLoading(true);
                 setError(null);
 
-                // Appel à l'API (assure-toi que le serveur tourne sur le port 5001)
-                const response = await fetch(`http://localhost:5001/api/planningProf`);
-                
-                if (!response.ok) {
-                    throw new Error(`Erreur serveur (${response.status}) : Route introuvable ou base vide.`);
-                }
-
-                const data = await response.json();
+                // Appel via l'instance API (dynamique Mac/Mobile)
+                const response = await API.get('/planningProf');
+                const data = response.data;
 
                 // Extraction des données de la section 'par_classe'
                 const allClasses = data.par_classe;
@@ -68,7 +64,7 @@ const PlanningProf = () => {
                 setEvents(extractedEvents);
             } catch (err) {
                 console.error("Détails de l'erreur planning:", err);
-                setError(err.message);
+                setError(err.response?.data?.message || err.message || "Erreur de chargement du planning");
             } finally {
                 setLoading(false);
             }

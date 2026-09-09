@@ -31,9 +31,10 @@ const Messagerie = () => {
 
     const fetchData = async (userId) => {
         try {
+            const API_BASE = `http://${window.location.hostname}:5001/api`;
             const [resMsgs, resContacts] = await Promise.all([
-                axios.get(`http://localhost:5173/api/messages/${userId}`),
-                axios.get(`http://localhost:5173/api/messages/destinataires?userId=${userId}`)
+                axios.get(`${API_BASE}/messages/${userId}`),
+                axios.get(`${API_BASE}/messages/destinataires?userId=${userId}`)
             ]);
             
             setMessagesRecus(resMsgs.data.recus || []);
@@ -89,7 +90,8 @@ const Messagerie = () => {
         if (!selectedDestinataire || !contenu) return;
 
         try {
-            await axios.post('http://localhost:5173/api/messages/send', {
+            const API_BASE = `http://${window.location.hostname}:5001/api`;
+            await axios.post(`${API_BASE}/messages/send`, {
                 expediteur: user._id || user.id,
                 destinataire: selectedDestinataire,
                 sujet,

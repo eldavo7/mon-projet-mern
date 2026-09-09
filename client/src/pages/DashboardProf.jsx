@@ -1,10 +1,8 @@
-// client/src/pages/DashboardProf.jsx
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { CheckCircle, AlertCircle } from 'lucide-react';
-import axios from 'axios'; // <-- 1. Importe axios
 
+import API from '../api';
 import { formatFullName } from '../utils/formatters';
 import Navbar from '../components/Navbar';
 
@@ -84,7 +82,7 @@ export const VueAccueilProf = () => {
 const DashboardProf = () => {
   const navigate = useNavigate();
   const [prof, setProf] = useState(null);
-  const [notifications, setNotifications] = useState([]); // <-- 2. État des notifications
+  const [notifications, setNotifications] = useState([]);
 
   const dateParisComplet = new Intl.DateTimeFormat('fr-FR', {
     timeZone: 'Europe/Paris',
@@ -105,9 +103,9 @@ const DashboardProf = () => {
       } else {
         setProf(parsedUser);
         
-        // 3. Récupération des notifications du prof
+        // Récupération des notifications du prof via l'instance API configurée
         const userId = parsedUser._id || parsedUser.id;
-        axios.get(`http://localhost:5001/api/notifications/${userId}`)
+        API.get(`/notifications/${userId}`)
           .then(res => setNotifications(res.data))
           .catch(err => console.error("Erreur chargement notifications:", err));
       }
@@ -116,13 +114,13 @@ const DashboardProf = () => {
     }
   }, [navigate]);
 
-  // 4. Fonction pour marquer les notifications comme lues
+  // Fonction pour marquer les notifications comme lues via l'instance API configurée
   const handleMarkAsRead = async () => {
     const userId = prof?._id || prof?.id;
     if (!userId) return;
 
     try {
-      await axios.patch(`http://localhost:5001/api/notifications/read-all/${userId}`);
+      await API.patch(`/notifications/read-all/${userId}`);
       setNotifications(notifications.map(n => ({ ...n, read: true })));
     } catch (err) {
       console.error("Erreur marquage notifications:", err);

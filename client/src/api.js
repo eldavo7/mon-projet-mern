@@ -2,11 +2,12 @@
 
 import axios from 'axios';
 
+const BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5001/api`;
+
 const API = axios.create({
-    baseURL: 'http://localhost:5001/api',
+    baseURL: BASE_URL,
 });
 
-// Intercepteur pour ajouter automatiquement le token à chaque requête
 API.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -14,8 +15,6 @@ API.interceptors.request.use((config) => {
     }
     return config;
 });
-
-// --- AUTHENTIFICATION ---
 
 export const login = async (email, password) => {
     try {
@@ -38,8 +37,6 @@ export const register = async (userData) => {
     }
 };
 
-// --- MOT DE PASSE ---
-
 export const requestPasswordReset = async (email) => {
     try {
         const response = await API.post('/auth/forgot-password', { email });
@@ -48,8 +45,6 @@ export const requestPasswordReset = async (email) => {
         return { success: false, message: error.response?.data?.message || 'Erreur lors de la demande' };
     }
 };
-
-// --- RÉCUPÉRATION DES DONNÉES (DASHBOARD) ---
 
 export const getUserDashboard = async () => {
     try {
@@ -60,11 +55,8 @@ export const getUserDashboard = async () => {
     }
 };
 
-// --- PUBLICATIONS (POSTS) ---
-
 export const createPost = async (formData) => {
     try {
-        // Axios gère automatiquement le Content-Type pour FormData
         const response = await API.post('/posts/posts', formData);
         return { success: true, post: response.data.post };
     } catch (error) {
