@@ -12,6 +12,7 @@ import Messagerie from './pages/Messagerie';
 import Conditions from './components/Conditions';
 import PlanningProf from './pages/PlanningProf';
 import PlanningEtudiant from './pages/PlanningEtudiant';
+import LancerAppel from './pages/LancerAppel'; // <--- Import de la page LancerAppel
 
 // --- FONCTION DE SÉCURITÉ : VÉRIFICATION DE L'EXPIRATION TIMEOUT (1H) ---
 const checkSessionExpiration = () => {
@@ -105,6 +106,16 @@ export default function App() {
         <Route path="gestion-eleve" element={<GestionEleves />} />
         <Route path="messagerie" element={<Messagerie />} />
       </Route>
+
+      {/* Page Lancer l'appel (protégée pour les profs / admins) */}
+      <Route 
+        path="/lancer-appel" 
+        element={
+          <PrivateRoute requiredRoles={['prof', 'admin', 'professeur']}>
+            <LancerAppel />
+          </PrivateRoute>
+        } 
+      />
 
       {/* Espace Étudiant */}
       <Route 

@@ -1,8 +1,8 @@
 // client/src/api.js
-
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5001/api`;
+// Utiliser l'IP fixe de votre Mac pour que le téléphone et le Mac pointent exactement au même endroit
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.1.95:5001/api';
 
 const API = axios.create({
     baseURL: BASE_URL,

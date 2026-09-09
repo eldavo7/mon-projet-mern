@@ -37,34 +37,31 @@ mon-projet-mern/
 │
 └── .gitignore
 
-# Documentation - Mise à jour du Planning Professeur (`PlanningProf.jsx`)
 
-## Résumé des changements
-Ce correctif aligne la page **PlanningProf** sur le même modèle ergonomique que la page **PlanningEtudiant**.
 
-### 1. Vue Ordinateur (PC / Grand Écran)
-- Restauration de la grille complète via le composant `GridPlanning`.
-- Ajout d'un conteneur avec un défilement horizontal fluide (`overflow-x-auto`) et une largeur contrôlée pour garantir un affichage propre, lisible et non compressé sur tous les moniteurs.
 
-### 2. Vue Mobile & Tablette
-- Bascule automatique sur un affichage en **cartes verticales** optimisé pour les petits écrans dès que la largeur passe sous le seuil `lg`.
-- Affichage explicite de la classe (`ev.classe`), du jour, de l'horaire avec icône d'horloge et de la matière/salle associée.
+# Documentation des modifications - Branche `modif_11`
 
-## Commandes Git utilisées pour la livraison
-Pour versionner et envoyer ces modifications sur la branche `modif_10`, exécutez les commandes suivantes dans votre terminal :
+## 📋 Récapitulatif des interventions
 
-```bash
-# Création et bascule sur la nouvelle branche
-git checkout -b modif_10
+### 1. Correction UI & Layout (Messagerie & Navigation)
+* **Résolution des doublons de Navbar** : Suppression du composant `<Navbar />` dans `Messagerie.jsx` pour éviter la double barre de navigation générée par le layout parent.
+* **Optimisation Mobile** : Amélioration du design responsive pour le confort de lecture et de saisie sur smartphone.
 
-# Vérification des fichiers modifiés
-git status
+### 2. Configuration Réseau Multi-Appareils (Développement Cross-Device)
+* **Configuration Serveur Express (`server.js`)** : Passage de l'écoute réseau sur `0.0.0.0` pour permettre les connexions entrantes depuis le réseau local Wi-Fi.
+* **Plage CORS ouverte** : Autorisation des requêtes originaires du Mac et du smartphone (`*`).
+* **Dynamisation des URLs Client (`api.js` & `Messagerie.jsx`)** : Replacement de `localhost` par `window.location.hostname` dans la configuration de base d'Axios, basculant automatiquement les appels API vers `http://192.168.1.95:5001/api` lorsqu'on navigue depuis un appareil mobile.
 
-# Ajout du fichier source mis à jour
-git add client/src/pages/PlanningProf.jsx
+### 3. Base de Données MongoDB & Unification de l'Assiduité
+* **Consultation Compass** : Utilisation des filtres de recherche JSON (ex: `{ "prenom": "corinne" }` ou via `$regex`) pour interroger les 1800+ étudiants.
+* **Architecture Assiduité (En cours)** : Analyse de la désynchronisation entre la collection `assiduites` (enregistrée par `LancerAppel.jsx`) et le champ `absences` (dans `etudiants`). Préparation de la centralisation de la source de vérité sur la collection unique `assiduites`.
 
-# Validation du commit
-git commit -m "feat(planning): harmonisation de la vue PC et mobile pour les professeurs"
+---
 
-# Envoi de la branche sur le dépôt distant
-git push origin modif_10
+## 🛠 Procédure de test sur Smartphone (Honor / Android)
+
+1. **Activer le mode Développeur** : `Paramètres` > `À propos du téléphone` > Appuyer 7 fois sur `Numéro de build`.
+2. **Activer le Débogage USB** : `Paramètres` > `Système & mises à jour` > `Options pour les développeurs` > `Débogage USB`.
+3. **Accès Frontend** : Ouvrir `http://192.168.1.95:5173` sur le navigateur mobile.
+4. **Inspection Chrome** : Connecter le téléphone en USB sur Mac et ouvrir `chrome://inspect/#devices` sur Chrome Mac.

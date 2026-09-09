@@ -21,13 +21,20 @@ const authRoutes = require('./routes/authRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const planningRoutes = require('./routes/planningRoutes');
 const messageRoutes = require('./routes/messageRoutes');
+const assiduiteRoutes = require('./routes/assiduiteRoutes');
 
 // 4. Déclaration des endpoints API
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
-app.use('/api/planningProf', planningRoutes);
+app.use('/api/eleves', studentRoutes); // Ajout de l'alias en français pour correspondre au front-end
+// app.use('/api/planningProf', planningRoutes);
+app.use('/api/planning', planningRoutes);
+
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/planningProf', planningRoutes);
+app.use('/api/assiduite', assiduiteRoutes);
+
 
 // 5. Route de test
 app.get('/', (req, res) => {
