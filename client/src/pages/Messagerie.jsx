@@ -1,9 +1,9 @@
 // mon-projet-mern/client/src/pages/Messagerie.jsx
 
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 // Navbar retiré pour éviter la duplication avec le layout parent
 import { Send, Inbox, Search, CheckCircle } from 'lucide-react';
+import API from '../api';
 
 const Messagerie = () => {
     const [user, setUser] = useState(null);
@@ -31,10 +31,9 @@ const Messagerie = () => {
 
     const fetchData = async (userId) => {
         try {
-            const API_BASE = `http://${window.location.hostname}:5001/api`;
             const [resMsgs, resContacts] = await Promise.all([
-                axios.get(`${API_BASE}/messages/${userId}`),
-                axios.get(`${API_BASE}/messages/destinataires?userId=${userId}`)
+                API.get(`/messages/${userId}`),
+                API.get(`/messages/destinataires`, { params: { userId } })
             ]);
             
             setMessagesRecus(resMsgs.data.recus || []);
@@ -90,9 +89,7 @@ const Messagerie = () => {
         if (!selectedDestinataire || !contenu) return;
 
         try {
-            const API_BASE = `http://${window.location.hostname}:5001/api`;
-            await axios.post(`${API_BASE}/messages/send`, {
-                expediteur: user._id || user.id,
+            await API.post('/messages/send', {
                 destinataire: selectedDestinataire,
                 sujet,
                 contenu

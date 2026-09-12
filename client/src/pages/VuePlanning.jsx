@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, BookOpen, AlertCircle } from 'lucide-react';
+import API from '../api';
 
 const VuePlanning = () => {
     const [planning, setPlanning] = useState(null);
@@ -11,18 +12,14 @@ const VuePlanning = () => {
 
     useEffect(() => {
         setLoading(true);
-        fetch('http://localhost:5001/api/planningProf')
-            .then((res) => {
-                if (!res.ok) throw new Error("Impossible de récupérer l'emploi du temps");
-                return res.json();
-            })
-            .then((data) => {
+        API.get('/planningProf')
+            .then(({ data }) => {
                 setPlanning(data);
                 setLoading(false);
             })
             .catch((err) => {
                 console.error("Erreur chargement planning:", err);
-                setError(err.message);
+                setError(err.response?.data?.message || "Impossible de récupérer l'emploi du temps");
                 setLoading(false);
             });
     }, []);

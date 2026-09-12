@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, User, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import API from '../api';
 
 const SearchBar = () => {
     const [query, setQuery] = useState('');
@@ -16,10 +17,8 @@ const SearchBar = () => {
             }
 
             try {
-                // IMPORTANT : Utilise le port 5001 pour correspondre à ton serveur
-                const response = await fetch(`http://localhost:5001/api/students/search?q=${query}`);
-                const data = await response.json();
-                setResults(data);
+                const response = await API.get('/students/search', { params: { q: query } });
+                setResults(response.data);
             } catch (error) {
                 console.error("Erreur recherche:", error);
             }

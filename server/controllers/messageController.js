@@ -58,8 +58,10 @@ const findUserById = async (id) => {
 // @desc Envoyer un message
 exports.sendMessage = async (req, res) => {
   try {
-    const { destinataire, sujet, contenu, expediteur: bodyExpediteur } = req.body;
-    const expediteur = req.user?._id || req.user?.id || bodyExpediteur;
+    const { destinataire, sujet, contenu } = req.body;
+    // L'expéditeur vient UNIQUEMENT du token JWT vérifié (route protégée par `protect`),
+    // jamais du body : sinon n'importe qui peut usurper l'identité d'un autre utilisateur.
+    const expediteur = req.user?.id;
 
     if (!expediteur || !destinataire || !contenu) {
       return res.status(400).json({

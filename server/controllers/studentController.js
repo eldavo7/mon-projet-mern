@@ -1,10 +1,14 @@
 // server/controllers/studentController.js
 
-const Notification = require('../models/Notification'); // <-- 1. Import du modèle
+const Notification = require('../models/Notification');
 
 let User;
-try { User = require('../models/User'); } catch (e) {
-  try { User = require('../models/etudiantModel'); } catch (e2) {}
+try { 
+  User = require('../models/User'); 
+} catch (e) {
+  try { 
+    User = require('../models/etudiantModel'); 
+  } catch (e2) {}
 }
 
 // Filtre pour cibler uniquement les élèves
@@ -14,6 +18,16 @@ const eleveRoleQuery = {
     { role: { $exists: false } },
     { matiere: { $exists: false } }
   ]
+};
+
+// Fonction utilitaire pour normaliser les clés de trimestre ("Trimestre 1", "T1", "1" -> "T1")
+const normalizeTrimKey = (key) => {
+  if (!key) return 'T1';
+  const str = String(key).trim().toUpperCase();
+  if (str.includes('1')) return 'T1';
+  if (str.includes('2')) return 'T2';
+  if (str.includes('3')) return 'T3';
+  return 'T1';
 };
 
 // @desc Recherche par mot-clé (nom / prénom)
@@ -59,9 +73,17 @@ exports.getStudentById = async (req, res) => {
       return res.status(404).json({ success: false, message: "Élève non trouvé" });
     }
 
+    // Normalisation de la structure des notes en sortie
+    const rawNotes = student.notes || {};
+    const formattedNotes = {
+      T1: rawNotes.T1 || rawNotes["Trimestre 1"] || [],
+      T2: rawNotes.T2 || rawNotes["Trimestre 2"] || [],
+      T3: rawNotes.T3 || rawNotes["Trimestre 3"] || []
+    };
+
     res.status(200).json({
       ...student,
-      notes: student.notes || { T1: [], T2: [], T3: [] },
+      notes: formattedNotes,
       absences: student.absences || [],
       motsParents: student.motsParents || []
     });
@@ -79,8 +101,61 @@ exports.updateStudent = async (req, res) => {
       return res.status(404).json({ success: false, message: "Élève non trouvé" });
     }
 
+    // Un élève connecté sur sa propre fiche (req.isStaffRequest === false) ne peut
+    // que soumettre un justificatif d'absence : jamais ses notes ni d'autres champs.
+    if (!req.isStaffRequest) {
+      if (req.body.notes || req.body.nouvelleNote) {
+        return res.status(403).json({ success: false, message: "Vous ne pouvez pas modifier vos propres notes." });
+      }
+      const allowedSelfFields = new Set(['absences']);
+      const hasOtherFields = Object.keys(req.body).some((key) => !allowedSelfFields.has(key));
+      if (hasOtherFields) {
+        return res.status(403).json({ success: false, message: "Modification non autorisée." });
+      }
+    }
+
+    // --- GESTION DES NOTES SANS ÉCRASEMENT ---
     if (req.body.notes) {
-      student.notes = req.body.notes;
+      if (!student.notes) {
+        student.notes = { T1: [], T2: [], T3: [] };
+      }
+
+      // Cas 1 : Envoi d'une note unique via { nouvelleNote: {...}, trimestre: "T1" }
+      if (req.body.nouvelleNote) {
+        const trimKey = normalizeTrimKey(req.body.trimestre);
+        if (!Array.isArray(student.notes[trimKey])) {
+          student.notes[trimKey] = [];
+        }
+        student.notes[trimKey].push(req.body.nouvelleNote);
+      } 
+      // Cas 2 : Envoi d'un objet complet de notes { T1: [...], T2: [...] }
+      else if (typeof req.body.notes === 'object') {
+        Object.keys(req.body.notes).forEach((key) => {
+          const trimKey = normalizeTrimKey(key);
+          const incomingList = req.body.notes[key];
+
+          if (Array.isArray(incomingList)) {
+            if (!Array.isArray(student.notes[trimKey])) {
+              student.notes[trimKey] = [];
+            }
+
+            // Fusion pour éviter les doublons stricts (même date/matière/note)
+            incomingList.forEach((newNote) => {
+              const isDuplicate = student.notes[trimKey].some((existingNote) => 
+                existingNote.matiere === newNote.matiere &&
+                existingNote.note === newNote.note &&
+                existingNote.bareme === newNote.bareme &&
+                existingNote.date === newNote.date
+              );
+
+              if (!isDuplicate) {
+                student.notes[trimKey].push(newNote);
+              }
+            });
+          }
+        });
+      }
+
       student.markModified('notes');
 
       try {
@@ -95,6 +170,7 @@ exports.updateStudent = async (req, res) => {
       }
     }
 
+    // --- GESTION DES ABSENCES ---
     if (req.body.absences) {
       student.absences = req.body.absences;
       student.markModified('absences');
@@ -111,8 +187,9 @@ exports.updateStudent = async (req, res) => {
       }
     }
 
+    // --- MISE À JOUR DES AUTRES CHAMPS (DIVERS) ---
     Object.keys(req.body).forEach((key) => {
-      if (key !== 'notes' && key !== 'absences') {
+      if (!['notes', 'absences', 'nouvelleNote', 'trimestre'].includes(key)) {
         student[key] = req.body[key];
         student.markModified(key);
       }
@@ -120,7 +197,9 @@ exports.updateStudent = async (req, res) => {
 
     const updatedStudent = await student.save();
     res.status(200).json(updatedStudent);
+
   } catch (err) {
+    console.error("Erreur updateStudent :", err);
     res.status(500).json({ success: false, message: err.message });
   }
 };

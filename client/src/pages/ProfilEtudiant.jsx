@@ -11,7 +11,6 @@ import {
   MessageSquare, 
   Edit3, 
   Check, 
-  Plus,
   Layers,
   FileText,
   Download,
@@ -26,6 +25,7 @@ import {
 
 import Navbar from '../components/Navbar';
 import { formatFullName } from '../utils/formatters';
+import API from '../api';
 
 const LISTE_MATIERES = [
   'Anglais', 'Mathématiques', 'Français', 'Histoire-Géographie',
@@ -45,23 +45,21 @@ const ProfilEtudiant = () => {
   const [selectedTrimestreMatiere, setSelectedTrimestreMatiere] = useState('T1');
   const [selectedMatiere, setSelectedMatiere] = useState('Toutes');
   
-  // Filtre Trimestre pour la vue Assiduité
+  // Filtres Assiduité
   const [selectedTrimestreAssiduite, setSelectedTrimestreAssiduite] = useState('Tous');
-
-  // Filtre précis issu des cartes cliquables du bilan (ex: { trimestre: 'T1', type: 'Absence' } ou null)
   const [filterBilanDetail, setFilterBilanDetail] = useState(null);
 
   const [isEditing, setIsEditing] = useState(false);
 
-  // <-- AJOUTE LES 2 LIGNES ICI :
+  // État d'édition d'une note
   const [editingNoteIndex, setEditingNoteIndex] = useState(null);
-  const [editNoteForm, setEditNoteForm] = useState({ matiere: '', note: '', coef: 1, appreciation: '', trimestre: 'T1' });
+  const [editNoteForm, setEditNoteForm] = useState({ matiere: '', note: '', noteSur: 20, coef: 1, appreciation: '', trimestre: 'T1' });
 
-
-  // Modale & état pour la soumission de justificatif (Élève/Parent)
+  // Modale & état pour la soumission de justificatif
   const [selectedAbsenceForJustify, setSelectedAbsenceForJustify] = useState(null);
   const [justificationForm, setJustificationForm] = useState({ motif: 'Raison médicale / Maladie', explication: '' });
-// Formulaires
+
+  // Formulaires de création
   const [newNote, setNewNote] = useState({ matiere: '', note: '', noteSur: 20, coef: 1, appreciation: '', trimestre: 'T1' });
   const [newMot, setNewMot] = useState('');
   const [newAbsence, setNewAbsence] = useState({ motif: '', cours: '', date: '', type: 'Absence', trimestre: 'T1' });
@@ -78,9 +76,9 @@ const ProfilEtudiant = () => {
     setNewNote(prev => ({ ...prev, matiere: profMatiere }));
     setNewAbsence(prev => ({ ...prev, cours: profMatiere }));
 
-    fetch(`http://${window.location.hostname}:5001/api/students/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
+    // Chargement des données élève
+    API.get(`/students/${id}`)
+      .then(({ data }) => {
         setStudent({
           ...data,
           notes: data.notes || { T1: [], T2: [], T3: [] },
@@ -114,16 +112,16 @@ const ProfilEtudiant = () => {
        filteredNotesByMatiere.reduce((acc, curr) => acc + curr.coef, 0)).toFixed(2)
     : null;
 
-  // 1. Filtrage strict pour la vue "Assiduité & Signalements" : UNIQUEMENT les éléments en cours (non justifiés)
+  // Filtrage des absences en cours (non encore justifiées)
   const activeAbsences = (student.absences || []).filter(item => {
     const isJustified = item.justified || item.statut === 'JUSTIFIÉE' || item.justificatif?.statut === 'Approuvé';
-    if (isJustified) return false; // On exclut du flux "en cours" si c'est déjà justifié
+    if (isJustified) return false;
 
     if (selectedTrimestreAssiduite === 'Tous') return true;
     return (item.trimestre || 'T1') === selectedTrimestreAssiduite;
   });
 
-  // 2. Filtrage pour l'historique détaillé piloté par les cartes du Bilan global en bas
+  // Filtrage détaillé pour l'historique du Bilan global
   const filteredAbsencesBilan = (student.absences || []).filter(item => {
     const itemTrim = item.trimestre || 'T1';
     const typeStr = String(item.type || '').toLowerCase();
@@ -138,7 +136,7 @@ const ProfilEtudiant = () => {
     return true;
   });
 
-  // Calcul du bilan global DYNAMIQUE par trimestre
+  // Calcul du bilan par trimestre
   const getBilanTrimestre = (trim) => {
     const items = (student.absences || []).filter(item => {
       const itemTrim = item.trimestre || 'T1';
@@ -170,7 +168,7 @@ const ProfilEtudiant = () => {
     return { totalAbsences, totalRetards, justifiees, enAttente, total: items.length };
   };
 
-  // Soumission d'un justificatif par l'élève ou le parent
+  // Soumission d'un justificatif d'absence
   const handleSubmitJustificatif = async (e) => {
     e.preventDefault();
     if (!selectedAbsenceForJustify) return;
@@ -195,19 +193,13 @@ const ProfilEtudiant = () => {
     setJustificationForm({ motif: 'Raison médicale / Maladie', explication: '' });
 
     try {
-      await fetch(`http://localhost:5001/api/students/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ absences: updatedAbsences })
-      });
+      await API.patch(`/students/${id}`, { absences: updatedAbsences });
     } catch (err) {
       console.error('Erreur lors de la soumission du justificatif:', err);
     }
   };
 
-  // Validation ou refus d'un justificatif par l'enseignant
-
-// Validation ou refus d'un justificatif par l'enseignant
+  // Validation / Refus d'un justificatif
   const handleValidateJustificatif = async (absenceId, approved) => {
     const updatedAbsences = student.absences.map((abs) => {
       if (abs.id === absenceId) {
@@ -227,17 +219,14 @@ const ProfilEtudiant = () => {
     setStudent({ ...student, absences: updatedAbsences });
 
     try {
-      await fetch(`http://localhost:5001/api/students/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ absences: updatedAbsences })
-      });
+      await API.patch(`/students/${id}`, { absences: updatedAbsences });
     } catch (err) {
-      console.error('Erreur lors de la mise à jour du statut du justificatif:', err);
+      console.error('Erreur lors de la mise à jour du justificatif:', err);
     }
   };
 
-    const handleAddNote = async (e) => {
+  // Ajout d'une note
+  const handleAddNote = async (e) => {
     e.preventDefault();
     if (!newNote.matiere || newNote.note === '') return;
 
@@ -249,29 +238,25 @@ const ProfilEtudiant = () => {
         { 
           matiere: newNote.matiere, 
           note: Number(newNote.note), 
-          noteSur: Number(newNote.noteSur) || 20, // <-- Ajout du barème ici
+          noteSur: Number(newNote.noteSur) || 20,
           coef: Number(newNote.coef), 
           appreciation: newNote.appreciation 
         }
       ]
     };
     
-    
     setStudent({ ...student, notes: updatedNotes });
     const profMatiere = currentUser?.matiere || currentUser?.subject || newNote.matiere;
     setNewNote({ matiere: profMatiere, note: '', noteSur: 20, coef: 1, appreciation: '', trimestre: t });
 
     try {
-      await fetch(`http://localhost:5001/api/students/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: updatedNotes })
-      });
+      await API.patch(`/students/${id}`, { notes: updatedNotes });
     } catch (err) {
-      console.error('Erreur lors de la mise à jour des notes:', err);
+      console.error('Erreur lors de l\'ajout de la note:', err);
     }
   };
 
+  // Suppression d'une note
   const handleDeleteNote = async (trimestre, index) => {
     const updatedNotesList = [...(student.notes[trimestre] || [])];
     updatedNotesList.splice(index, 1);
@@ -284,21 +269,20 @@ const ProfilEtudiant = () => {
     setStudent({ ...student, notes: updatedNotes });
 
     try {
-      await fetch(`http://localhost:5001/api/students/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: updatedNotes })
-      });
+      await API.patch(`/students/${id}`, { notes: updatedNotes });
     } catch (err) {
       console.error('Erreur suppression note:', err);
     }
   };
 
+  // Début de modification d'une note
   const handleStartEditNote = (trimestre, index, item) => {
     setEditingNoteIndex({ trimestre, index });
     setEditNoteForm({ ...item, trimestre });
   };
-const handleSaveEditNote = async (e) => {
+
+  // Sauvegarde d'une note modifiée
+  const handleSaveEditNote = async (e) => {
     e.preventDefault();
     if (!editingNoteIndex) return;
 
@@ -312,7 +296,7 @@ const handleSaveEditNote = async (e) => {
       list[index] = {
         matiere: editNoteForm.matiere,
         note: Number(editNoteForm.note),
-        noteSur: Number(editNoteForm.noteSur) || 20, // <-- Ajout ici
+        noteSur: Number(editNoteForm.noteSur) || 20,
         coef: Number(editNoteForm.coef),
         appreciation: editNoteForm.appreciation
       };
@@ -327,7 +311,7 @@ const handleSaveEditNote = async (e) => {
         {
           matiere: editNoteForm.matiere,
           note: Number(editNoteForm.note),
-          noteSur: Number(editNoteForm.noteSur) || 20, // <-- Et ici aussi
+          noteSur: Number(editNoteForm.noteSur) || 20,
           coef: Number(editNoteForm.coef),
           appreciation: editNoteForm.appreciation
         }
@@ -338,15 +322,13 @@ const handleSaveEditNote = async (e) => {
     setEditingNoteIndex(null);
 
     try {
-      await fetch(`http://localhost:5001/api/students/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notes: updatedNotes })
-      });
+      await API.patch(`/students/${id}`, { notes: updatedNotes });
     } catch (err) {
       console.error('Erreur modification note:', err);
     }
   };
+
+  // Ajout d'un mot aux parents
   const handleAddMot = async (e) => {
     e.preventDefault();
     if (!newMot) return;
@@ -365,16 +347,13 @@ const handleSaveEditNote = async (e) => {
     setNewMot('');
 
     try {
-      await fetch(`http://localhost:5001/api/students/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ motsParents: updatedMots })
-      });
+      await API.patch(`/students/${id}`, { motsParents: updatedMots });
     } catch (err) {
-      console.error('Erreur lors de la mise à jour des mots:', err);
+      console.error('Erreur ajout mot:', err);
     }
   };
 
+  // Ajout d'un signalement (Absence / Retard)
   const handleAddAbsence = async (e) => {
     e.preventDefault();
     if (!newAbsence.cours || !newAbsence.date) return;
@@ -399,13 +378,9 @@ const handleSaveEditNote = async (e) => {
     setNewAbsence({ motif: '', cours: profMatiere, date: '', type: 'Absence', trimestre: 'T1' });
 
     try {
-      await fetch(`http://localhost:5001/api/students/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ absences: updatedAbsences })
-      });
+      await API.patch(`/students/${id}`, { absences: updatedAbsences });
     } catch (err) {
-      console.error('Erreur lors de la sauvegarde du signalement:', err);
+      console.error('Erreur sauvegarde signalement:', err);
     }
   };
 
@@ -421,7 +396,7 @@ const handleSaveEditNote = async (e) => {
 
       <main className="max-w-6xl mx-auto px-6 pt-8">
         
-        {/* EN-TÊTE */}
+        {/* EN-TÊTE DE NAVIGATION ET PROFIL */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <button
             onClick={() => navigate(-1)}
@@ -457,7 +432,7 @@ const handleSaveEditNote = async (e) => {
           </div>
         </div>
 
-        {/* ONGLETS */}
+        {/* BARRE D'ONGLETS */}
         <div className="flex border-b border-slate-200 mb-8 gap-2 overflow-x-auto">
           <button
             onClick={() => setActiveTab('releve')}
@@ -514,7 +489,6 @@ const handleSaveEditNote = async (e) => {
             <User size={16} /> Infos Élève
           </button>
         </div>
-
 
         {/* VUE 1 : RELEVÉ DE NOTES */}
         {activeTab === 'releve' && (
@@ -657,7 +631,7 @@ const handleSaveEditNote = async (e) => {
                 </p>
               )}
 
-              {/* Formulaire prof pour ajouter une note (intégré proprement ici) */}
+              {/* Formulaire prof pour ajouter une note */}
               {isProf && isEditing && (
                 <div className="mt-8 bg-violet-50/70 p-6 rounded-[2.5rem] border border-violet-100 space-y-4">
                   <h4 className="font-black text-xs text-violet-900 uppercase tracking-widest">Ajouter une nouvelle note</h4>
@@ -749,8 +723,6 @@ const handleSaveEditNote = async (e) => {
             </div>
           </div>
         )}
-
-
 
         {/* VUE 2 : BULLETIN OFFICIEL */}
         {activeTab === 'bulletin' && (
@@ -858,7 +830,7 @@ const handleSaveEditNote = async (e) => {
                         </span>
                         <span className="text-[10px] font-bold text-slate-400">Coef {item.coef}</span>
                       </div>
-                      <span className="text-xl font-black text-slate-900 mt-1">{item.note} / 20</span>
+                      <span className="text-xl font-black text-slate-900 mt-1">{item.note} / {item.noteSur || 20}</span>
                       <span className="text-xs font-bold text-slate-600">{item.matiere}</span>
                       {item.appreciation && (
                         <p className="text-[11px] text-slate-500 italic mt-1">{item.appreciation}</p>
@@ -941,7 +913,7 @@ const handleSaveEditNote = async (e) => {
                 </div>
               </div>
 
-              {/* LISTE DES SIGNALEMENTS EN COURS (Absences/Retards non encore justifiés) */}
+              {/* LISTE DES SIGNALEMENTS EN COURS */}
               <div className="lg:col-span-9 bg-[#0b1021] text-white rounded-[2.5rem] p-7 shadow-xl space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-800 pb-4">
                   <div>
@@ -953,7 +925,6 @@ const handleSaveEditNote = async (e) => {
                     </p>
                   </div>
 
-                  {/* Boutons de filtrage rapide par trimestre */}
                   <div className="flex items-center gap-1.5 bg-slate-900/80 p-1 rounded-2xl border border-slate-800 shrink-0">
                     <Filter size={12} className="text-slate-500 ml-2" />
                     {['Tous', 'T1', 'T2', 'T3'].map((t) => (
@@ -1022,7 +993,6 @@ const handleSaveEditNote = async (e) => {
                               </button>
                             )}
 
-                            {/* Actions prof si besoin de valider */}
                             {isProf && item.justificatif && !item.justified && (
                               <div className="flex items-center gap-2 pt-1">
                                 <button
@@ -1052,7 +1022,7 @@ const handleSaveEditNote = async (e) => {
                   )}
                 </div>
 
-                {/* Formulaire prof pour ajouter un signalement */}
+                {/* Formulaire prof de signalement */}
                 {isProf && (
                   <form onSubmit={handleAddAbsence} className="pt-6 border-t border-slate-800 space-y-4">
                     <h4 className="font-black text-xs text-violet-400 uppercase tracking-widest">Signaler une absence ou un retard</h4>
@@ -1075,16 +1045,15 @@ const handleSaveEditNote = async (e) => {
                         className="bg-slate-900 border border-slate-800 text-xs font-bold p-3 rounded-xl text-white"
                       />
 
-                        {/* Champ Date avec mini-calendrier intégré */}
-                        <div className="relative">
+                      <div className="relative">
                         <input
-                            type="date"
-                            required
-                            value={newAbsence.date}
-                            onChange={(e) => setNewAbsence({ ...newAbsence, date: e.target.value })}
-                            className="w-full bg-slate-900 border border-slate-800 text-xs font-bold p-3 rounded-xl text-white [color-scheme:dark] focus:outline-none focus:border-violet-600 cursor-pointer"
+                          type="date"
+                          required
+                          value={newAbsence.date}
+                          onChange={(e) => setNewAbsence({ ...newAbsence, date: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-800 text-xs font-bold p-3 rounded-xl text-white [color-scheme:dark] focus:outline-none focus:border-violet-600 cursor-pointer"
                         />
-                        </div>
+                      </div>
 
                       <select
                         value={newAbsence.trimestre}
@@ -1108,7 +1077,7 @@ const handleSaveEditNote = async (e) => {
               </div>
             </div>
 
-            {/* BILAN GLOBAL TRIMESTRIEL (CLIQUABLE) AVEC HISTORIQUE DÉTAILLÉ */}
+            {/* BILAN GLOBAL TRIMESTRIEL */}
             <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-6">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
@@ -1142,7 +1111,6 @@ const handleSaveEditNote = async (e) => {
                       </div>
 
                       <div className="grid grid-cols-2 gap-4">
-                        {/* Carte Absences Cliquable */}
                         <div 
                           onClick={() => setFilterBilanDetail({ trimestre: trim, type: 'Absence' })}
                           className={`p-3.5 rounded-2xl border transition-all cursor-pointer hover:shadow-md ${
@@ -1155,7 +1123,6 @@ const handleSaveEditNote = async (e) => {
                           <p className="text-xl font-black text-slate-900 mt-1">{stats.totalAbsences}</p>
                         </div>
 
-                        {/* Carte Retards Cliquable */}
                         <div 
                           onClick={() => setFilterBilanDetail({ trimestre: trim, type: 'Retard' })}
                           className={`p-3.5 rounded-2xl border transition-all cursor-pointer hover:shadow-md ${
@@ -1188,7 +1155,7 @@ const handleSaveEditNote = async (e) => {
                 })}
               </div>
 
-              {/* LISTE HISTORIQUE FILTRÉE PAR LE BILAN */}
+              {/* DÉTAILS DU BILAN FILTRÉ */}
               {filterBilanDetail && (
                 <div className="mt-8 pt-6 border-t border-slate-200 space-y-4">
                   <h4 className="font-black text-slate-800 text-sm uppercase tracking-wider">

@@ -1,8 +1,11 @@
 // client/src/api.js
 import axios from 'axios';
 
-// Utiliser l'IP fixe de votre Mac pour que le téléphone et le Mac pointent exactement au même endroit
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://192.168.1.95:5001/api';
+// Priorité à VITE_API_URL (utile en prod / déploiement). En dev, on utilise le
+// hostname avec lequel la page a été chargée (localhost sur le Mac, IP du Mac
+// si on ouvre la page depuis un téléphone sur le même Wi-Fi) : ça évite de
+// coder une IP figée qui change à chaque réseau.
+const BASE_URL = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5001/api`;
 
 const API = axios.create({
     baseURL: BASE_URL,
@@ -37,40 +40,10 @@ export const register = async (userData) => {
     }
 };
 
-export const requestPasswordReset = async (email) => {
-    try {
-        const response = await API.post('/auth/forgot-password', { email });
-        return { success: true, message: response.data.message };
-    } catch (error) {
-        return { success: false, message: error.response?.data?.message || 'Erreur lors de la demande' };
-    }
-};
-
-export const getUserDashboard = async () => {
-    try {
-        const response = await API.get('/users/dashboard');
-        return { success: true, data: response.data };
-    } catch (error) {
-        return { success: false, message: 'Impossible de récupérer les données' };
-    }
-};
-
-export const createPost = async (formData) => {
-    try {
-        const response = await API.post('/posts/posts', formData);
-        return { success: true, post: response.data.post };
-    } catch (error) {
-        return { success: false, message: 'Échec de la création du post' };
-    }
-};
-
-export const getPosts = async () => {
-    try {
-        const response = await API.get('/posts/posts');
-        return { success: true, posts: response.data.posts };
-    } catch (error) {
-        return { success: false, message: 'Échec de la récupération des posts' };
-    }
-};
+// NOTE : les fonctions requestPasswordReset / getUserDashboard / createPost / getPosts
+// ont été retirées ici : elles appelaient des routes qui n'existent pas côté backend
+// (/auth/forgot-password, /users/dashboard, /posts/posts) et n'étaient utilisées
+// nulle part dans l'app. Si tu as besoin d'un "mot de passe oublié", il faudra
+// d'abord créer la route correspondante côté serveur (authController + authRoutes).
 
 export default API;

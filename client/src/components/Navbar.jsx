@@ -17,7 +17,7 @@ import {
   CheckCheck
 } from 'lucide-react';
 import { formatFullName } from '../utils/formatters';
-import axios from 'axios';
+import API from '../api';
 
 export default function Navbar({ user, notifications = [], setNotifications }) {
   const navigate = useNavigate();
@@ -57,8 +57,7 @@ export default function Navbar({ user, notifications = [], setNotifications }) {
   const handleMarkAllAsRead = async () => {
     try {
       const userId = user?._id || user?.id;
-      const API_BASE = `http://${window.location.hostname}:5001/api`;
-      await axios.put(`${API_BASE}/notifications/read-all/${userId}`);
+      await API.put(`/notifications/read-all/${userId}`);
       
       // Mettre à jour l'état localement
       if (setNotifications) {
@@ -72,9 +71,8 @@ export default function Navbar({ user, notifications = [], setNotifications }) {
   // Gérer le clic sur une notification spécifique
   const handleNotifClick = async (notif) => {
     try {
-      const API_BASE = `http://${window.location.hostname}:5001/api`;
       if (!notif.read && notif._id) {
-        await axios.put(`${API_BASE}/notifications/read/${notif._id}`);
+        await API.put(`/notifications/read/${notif._id}`);
         if (setNotifications) {
           setNotifications(prev => prev.map(n => (n._id === notif._id ? { ...n, read: true } : n)));
         }

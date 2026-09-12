@@ -3,6 +3,10 @@ const express = require('express');
 const router = express.Router();
 const messageController = require('../controllers/messageController');
 const Message = require('../models/Message');
+const { protect } = require('../middleware/auth');
+
+// Toute la messagerie nécessite d'être connecté
+router.use(protect);
 
 // 1. Routes spécifiques et statiques (OBLIGATOIREMENT avant les routes dynamiques `/:userId`)
 router.get('/destinataires', messageController.getDestinataires);

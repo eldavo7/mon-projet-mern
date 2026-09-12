@@ -2,8 +2,9 @@
 const express = require('express');
 const router = express.Router();
 const Planning = require('../models/Planning');
+const { protect } = require('../middleware/auth');
 
-router.get('/', async (req, res) => {
+router.get('/', protect, async (req, res) => {
     console.log("📢 Requête reçue sur /api/planningProf");
     try {
         const planning = await Planning.findOne();

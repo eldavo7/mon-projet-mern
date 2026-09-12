@@ -4,6 +4,7 @@ const User = require('../models/User');
 const Prof = require('../models/Prof'); 
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { JWT_SECRET } = require('../middleware/auth');
 
 exports.register = async (req, res) => {
     try {
@@ -78,8 +79,26 @@ exports.login = async (req, res) => {
             return res.status(400).json({ success: false, message: "Identifiants invalides" });
         }
 
-        // 2. Vérification Bcrypt (Compare le texte clair avec le hash de la DB)
-        const isMatch = (password === user.password) || await bcrypt.compare(password, user.password);
+        // 2. Vérification du mot de passe
+        // Certains comptes importés (script Python, ~1800 élèves) ont un mot de passe
+        // encore en clair en base. On accepte ce cas UNE fois, puis on le hashe
+        // immédiatement (migration paresseuse) pour que ça ne se reproduise plus.
+        const isBcryptHash = typeof user.password === 'string' && user.password.startsWith('$2');
+        let isMatch = false;
+
+        if (isBcryptHash) {
+            isMatch = await bcrypt.compare(password, user.password);
+        } else {
+            // Mot de passe legacy en clair
+            isMatch = password === user.password;
+            if (isMatch) {
+                const salt = await bcrypt.genSalt(10);
+                user.password = await bcrypt.hash(password, salt);
+                await user.save();
+                console.log(`Mot de passe migré vers bcrypt pour : ${email}`);
+            }
+        }
+
         if (!isMatch) {
             console.log("Mot de passe incorrect pour :", email);
             return res.status(400).json({ success: false, message: "Identifiants invalides" });
@@ -88,7 +107,7 @@ exports.login = async (req, res) => {
         // 3. Création du Token JWT
         const token = jwt.sign(
             { id: user._id, role: user.role },
-            process.env.JWT_SECRET || 'votre_cle_secrete_temporaire',
+            JWT_SECRET,
             { expiresIn: '24h' }
         );
 

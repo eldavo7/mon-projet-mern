@@ -26,19 +26,32 @@ const assiduiteRoutes = require('./routes/assiduiteRoutes');
 // 4. Déclaration des endpoints API
 app.use('/api/auth', authRoutes);
 app.use('/api/students', studentRoutes);
-app.use('/api/eleves', studentRoutes); // Ajout de l'alias en français pour correspondre au front-end
-// app.use('/api/planningProf', planningRoutes);
+app.use('/api/eleves', studentRoutes); // Alias en français pour correspondre au front-end
 app.use('/api/planning', planningRoutes);
+app.use('/api/planningProf', planningRoutes); // Alias legacy (front historique)
 
 app.use('/api/messages', messageRoutes);
 app.use('/api/notifications', notificationRoutes);
-app.use('/api/planningProf', planningRoutes);
 app.use('/api/assiduite', assiduiteRoutes);
 
 
 // 5. Route de test
 app.get('/', (req, res) => {
     res.send("L'API tourne ! 🚀");
+});
+
+// 6. 404 pour toute route API inconnue
+app.use('/api', (req, res) => {
+    res.status(404).json({ success: false, message: `Route API introuvable : ${req.method} ${req.originalUrl}` });
+});
+
+// 7. Gestionnaire d'erreurs global (filet de sécurité pour toute erreur non gérée)
+app.use((err, req, res, next) => {
+    console.error("🔥 Erreur non gérée :", err);
+    res.status(err.status || 500).json({
+        success: false,
+        message: err.message || "Erreur interne du serveur"
+    });
 });
 
 // 6. Démarrage du serveur sur 0.0.0.0 (Accessible depuis Mac et Téléphone)

@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Outlet } from 'react-router-dom';
 import { BookOpen, Award, Clock } from 'lucide-react';
-import axios from 'axios'; // <-- 1. Importe axios
 
 import { formatFullName } from '../utils/formatters';
 import Navbar from '../components/Navbar';
+import API from '../api';
 
 /* ==========================================================================
    1. SOUS-COMPOSANT : VUE ACCUEIL ÉTUDIANT (Tableau de bord principal)
@@ -108,7 +108,7 @@ const DashboardEtudiant = () => {
 
         // 3. Récupération des notifications de l'élève
         const userId = parsedUser._id || parsedUser.id;
-        axios.get(`http://localhost:5001/api/notifications/${userId}`)
+        API.get(`/notifications/${userId}`)
           .then(res => setNotifications(res.data))
           .catch(err => console.error("Erreur chargement notifications:", err));
       }
@@ -123,7 +123,9 @@ const DashboardEtudiant = () => {
     if (!userId) return;
 
     try {
-      await axios.patch(`http://localhost:5001/api/notifications/read-all/${userId}`);
+      // NOTE : la route backend est en PUT (pas PATCH) — c'était un bug préexistant qui
+      // faisait échouer silencieusement ce bouton.
+      await API.put(`/notifications/read-all/${userId}`);
       setNotifications(notifications.map(n => ({ ...n, read: true })));
     } catch (err) {
       console.error("Erreur marquage notifications:", err);
